@@ -16,6 +16,8 @@ var _screenshot_dir := ""
 var _shot_index := 0
 var _shot_timer := 0.0
 var _autoplay_stage := 0
+var _pl := 0
+var _pr := 0
 
 
 func _ready() -> void:
@@ -102,19 +104,19 @@ func _physics_process(delta: float) -> void:
 	elif table.plunger.has_ball() and _autoplay_timer > 1.5:
 		table.plunger.launch(0.8)
 		_autoplay_timer = 0.0
-	# IA simples de flipper: bate quando a bola está caindo perto da pá.
-	var left := false
-	var right := false
+	# IA simples de flipper: pulsos quando a bola está na zona da pá (caindo ou parada).
+	if _pl > 0: _pl -= 1
+	if _pr > 0: _pr -= 1
 	for b in table.active_balls:
 		if not is_instance_valid(b) or b.in_plunger_lane:
 			continue
-		if b.position.y > 880.0 and b.linear_velocity.y > 0.0:
-			if b.position.x < 380.0 and b.position.x > 200.0:
-				left = true
-			elif b.position.x >= 380.0 and b.position.x < 560.0:
-				right = true
-	table.flipper_left.set_pressed(left)
-	table.flipper_right.set_pressed(right)
+		var in_zone := b.position.y > 900.0 and b.linear_velocity.y > -50.0
+		if in_zone and b.position.x < 385.0 and b.position.x > 200.0 and _pl == 0:
+			_pl = 32
+		if in_zone and b.position.x >= 375.0 and b.position.x < 560.0 and _pr == 0:
+			_pr = 32
+	table.flipper_left.set_pressed(_pl > 20)
+	table.flipper_right.set_pressed(_pr > 20)
 	if _screenshot_dir != "":
 		_shot_timer += delta
 		if _shot_timer > 3.0 and _shot_index < 8:

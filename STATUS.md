@@ -25,6 +25,12 @@
 - Controles de toque para celular (`TouchControls`), build Web publicado em GitHub Pages.
 - Suíte: 121 verificações passando (inclui avanço de fase e vida do chefe por fase).
 
+## Atualização 2026-09-07 (2º playtest do autor)
+- Outlanes mais estreitas (46 px), defletores sólidos no fim das órbitas, rampa do apron tangente ao pivô do flipper (sem bolsa em "V"), bola salva volta ao lançador para o jogador lançar.
+- Paredes com espessura real (retângulos de 18 px, `TableGeometry.make_wall(side)`) em vez de segmentos: elimina tunneling pela lateral.
+- Animações por quadros reais (`SpriteAnimator`, 36 quadros gerados: idle x3, ataque, dano, morte; ciclo de asas): nada de deformar o mesmo PNG.
+- Bola, flipper, sinos, runas, alvos, trava e portal com arte gerada; rastro e faíscas na bola; traço duplo nas paredes.
+
 ## Verificação visual
 - `godot --path . -- --autoplay --screenshots=DIR` gera 8 capturas jogando sozinho; conferidas manualmente: HUD, mesa, inimigos, chefe, mensagens e flippers renderizam na RTX 3060 (OpenGL Compatibility).
 

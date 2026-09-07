@@ -33,7 +33,20 @@ func _ready() -> void:
 	rotation = _angle
 	_build_shape()
 	_sprite = get_node_or_null("Sprite") as Sprite2D
-	if _sprite and _sprite.texture:
+	if _sprite and ResourceLoader.exists("res://assets/art/props/flipper.png"):
+		# Sprite gerado: extremidade redonda grande à esquerda = pivô. Escala pela altura (2*pivot_radius+borracha).
+		var tex: Texture2D = load("res://assets/art/props/flipper.png")
+		_sprite.texture = tex
+		_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		var h := float(tex.get_height())
+		var w := float(tex.get_width())
+		var target_len := length + tip_radius + pivot_radius
+		var sx := target_len / w
+		var sy := (pivot_radius * 2.0 + 6.0) / h
+		_sprite.scale = Vector2(sx, sy)
+		# centro do pivô no sprite ~ (h/2, h/2) a partir da esquerda
+		_sprite.position = Vector2((w / 2.0 - h / 2.0) * sx, 0.0)
+	elif _sprite and _sprite.texture:
 		# Sprite: pivô no pixel (16,16) de 128x32; ponta em ~118 -> 102 px de comprimento útil.
 		_sprite.position = Vector2(64.0 - 16.0, 0.0) * (length / 102.0)
 		_sprite.scale = Vector2(length / 102.0, 1.0)
@@ -135,6 +148,8 @@ func _sweep_correct(old_rot: float, new_rot: float) -> void:
 		var bn := b.linear_velocity.dot(normal)
 		if sn > bn:
 			var v: Vector2 = b.linear_velocity + normal * (sn - bn) * 1.05
+			if v.length() > Ball.MAX_SPEED:
+				v = v.normalized() * Ball.MAX_SPEED
 			b.linear_velocity = v
 			PhysicsServer2D.body_set_state(b.get_rid(), PhysicsServer2D.BODY_STATE_LINEAR_VELOCITY, v)
 		sweep_corrections += 1

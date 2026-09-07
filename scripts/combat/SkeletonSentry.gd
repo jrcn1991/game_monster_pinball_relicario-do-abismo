@@ -65,6 +65,9 @@ func _on_alive_tick(delta: float) -> void:
 				sprite.modulate = Color.WHITE
 				_lance_shape.set_deferred("disabled", false)
 				_lance_line.visible = true
+				if animator != null:
+					animator.play("attack", LANCE_TIME)
+					sprite.flip_h = lance_direction.x < 0.0
 		2:
 			_phase_left -= delta
 			if _phase_left <= 0.0:

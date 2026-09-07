@@ -38,6 +38,18 @@ var _flash := 0.0
 var projectile_scene: PackedScene
 var _rng := RandomNumberGenerator.new()
 var shots := 0
+var animator: SpriteAnimator
+
+
+func apply_frames(art_dir: String, target_px: float) -> void:
+	var fr := SpriteAnimator.load_frames(art_dir, "boss")
+	if (fr.idle as Array).is_empty():
+		return
+	if animator == null:
+		animator = SpriteAnimator.new()
+		animator.name = "Animator"
+		add_child(animator)
+	animator.setup(_sprite, fr, target_px, true)
 
 
 func _ready() -> void:
@@ -106,8 +118,12 @@ func _process(delta: float) -> void:
 	if _flash > 0.0:
 		_flash = maxf(_flash - delta * 5.0, 0.0)
 		_sprite.modulate = _base_modulate().lerp(Color(2.0, 1.4, 1.6), _flash)
-	_sprite.position.y = sin(Time.get_ticks_msec() * 0.002) * 4.0
+	var tm := Time.get_ticks_msec() * 0.001
+	_sprite.position.y = sin(tm * 1.4) * 9.0
+	_sprite.position.x = sin(tm * 0.6) * 5.0
+	_sprite.rotation = sin(tm * 0.9) * 0.03
 	_eye.position.y = _sprite.position.y - 6.0
+	_eye.scale = Vector2.ONE * (1.0 + 0.1 * sin(tm * 5.0))
 
 
 func _base_modulate() -> Color:
@@ -124,6 +140,8 @@ func _fire() -> void:
 	if table == null or projectile_scene == null:
 		return
 	shots += 1
+	if animator != null:
+		animator.play("attack", 0.8)
 	var p: Projectile = projectile_scene.instantiate()
 	p.position = position + Vector2(0, body_radius + 10.0)
 	p.direction = Vector2(_rng.randf_range(-0.5, 0.5), 1.0).normalized()
@@ -181,6 +199,8 @@ func _set_phase(new_phase: Phase) -> void:
 			_switch_timer = WEAK_SWITCH_SECONDS
 		Phase.PHASE2:
 			_begin_transition()
+			if animator != null:
+				animator.play("attack", 1.5)
 			summon_requested.emit(4)
 			SignalBus.hud_message.emit(Loc.t("boss_phase") % 2 + "  " + Loc.t("summon"), 2.5)
 			_proj_timer = 1.5
@@ -281,6 +301,8 @@ func take_area_damage(amount: int, origin: Vector2) -> void:
 
 func _on_damaged(_amount: int, _hit_position: Vector2, _critical: bool) -> void:
 	_flash = 1.0
+	if animator != null:
+		animator.play("hurt", 0.4)
 	SignalBus.boss_health_changed.emit(health.hp, health.max_hp)
 	# Transições de fase pelos limiares de vida (sinalizadas).
 	if phase == Phase.PHASE1 and health.hp <= phase_hp * 2:
@@ -299,8 +321,10 @@ func _on_died(points: int) -> void:
 	SignalBus.request_screen_shake.emit(1.0)
 	SignalBus.hud_message.emit(Loc.t("boss_defeated"), 3.0)
 	_shape.set_deferred("disabled", true)
+	if animator != null:
+		animator.play("death", 3.0)
 	var tw := create_tween()
-	tw.tween_property(_sprite, "modulate:a", 0.0, 1.2)
+	tw.tween_property(_sprite, "modulate:a", 0.0, 2.0)
 	defeated.emit()
 	SignalBus.boss_defeated.emit()
 

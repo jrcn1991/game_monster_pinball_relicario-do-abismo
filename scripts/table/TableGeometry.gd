@@ -26,30 +26,99 @@ static func metal_material() -> PhysicsMaterial:
 	return m
 
 
+const WALL_THICKNESS := 18.0
+
 ## Cria uma parede (StaticBody2D) a partir de uma polilinha aberta.
+## Cada trecho é um retângulo COM ESPESSURA (não um segmento sem espessura): a bola precisaria
+## penetrar espessura + raio em um único tick para atravessar, o que elimina o tunneling.
+## side: 0 = espessura centrada na linha; +1/-1 = espessura só para um lado (normal (dy,-dx)).
 static func make_wall(parent: Node, points: PackedVector2Array, wall_name: String = "Wall",
-		width: float = 6.0, color: Color = WALL_COLOR, material: PhysicsMaterial = null) -> StaticBody2D:
+		width: float = 6.0, color: Color = WALL_COLOR, material: PhysicsMaterial = null, side: int = 0,
+		thickness: float = WALL_THICKNESS) -> StaticBody2D:
 	var body := StaticBody2D.new()
 	body.name = wall_name
 	body.collision_layer = 1
 	body.collision_mask = 0
 	body.physics_material_override = material if material != null else wall_material()
 	for i in range(points.size() - 1):
+		var a := points[i]
+		var b := points[i + 1]
+		var d := (b - a).normalized()
+		var n := Vector2(d.y, -d.x)
+		var t0 := -thickness * 0.5
+		var t1 := thickness * 0.5
+		if side != 0:
+			t0 = -1.0 * float(side) * 1.0  # 1 px para dentro: evita frestas na junção
+			t1 = float(side) * thickness
+			if t0 > t1:
+				var tmp := t0; t0 = t1; t1 = tmp
+		# Prolonga 1 px nas pontas para não deixar fresta entre trechos consecutivos.
+		var a2 := a - d * 1.0
+		var b2 := b + d * 1.0
 		var cs := CollisionShape2D.new()
-		var seg := SegmentShape2D.new()
-		seg.a = points[i]
-		seg.b = points[i + 1]
-		cs.shape = seg
+		var poly := ConvexPolygonShape2D.new()
+		poly.points = PackedVector2Array([a2 + n * t0, b2 + n * t0, b2 + n * t1, a2 + n * t1])
+		cs.shape = poly
 		body.add_child(cs)
+	# Traço estilizado: sombra escura larga + corpo de bronze + brilho fino.
+	var shadow := Line2D.new()
+	shadow.name = "Shadow"
+	shadow.points = points
+	shadow.width = width + 8.0
+	shadow.default_color = Color(0.02, 0.02, 0.05, 0.85)
+	shadow.joint_mode = Line2D.LINE_JOINT_ROUND
+	shadow.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	shadow.end_cap_mode = Line2D.LINE_CAP_ROUND
+	shadow.z_index = -2
+	body.add_child(shadow)
 	var line := Line2D.new()
 	line.name = "Visual"
 	line.points = points
-	line.width = width
+	line.width = width + 2.0
 	line.default_color = color
 	line.joint_mode = Line2D.LINE_JOINT_ROUND
 	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	line.end_cap_mode = Line2D.LINE_CAP_ROUND
 	line.antialiased = true
+	line.z_index = -1
+	body.add_child(line)
+	var hl := Line2D.new()
+	hl.name = "Highlight"
+	hl.points = points
+	hl.width = maxf(width * 0.35, 2.0)
+	hl.default_color = color.lightened(0.45)
+	hl.default_color.a = 0.7
+	hl.joint_mode = Line2D.LINE_JOINT_ROUND
+	hl.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	hl.end_cap_mode = Line2D.LINE_CAP_ROUND
+	hl.position = Vector2(-1.0, -1.5)
+	body.add_child(hl)
+	parent.add_child(body)
+	return body
+
+
+## Bloco sólido convexo (ex.: defletor encostado na parede): sem cantos agudos onde a bola trava.
+static func make_solid(parent: Node, points: PackedVector2Array, solid_name: String = "Solid",
+		color: Color = WALL_COLOR, material: PhysicsMaterial = null) -> StaticBody2D:
+	var body := StaticBody2D.new()
+	body.name = solid_name
+	body.collision_layer = 1
+	body.collision_mask = 0
+	body.physics_material_override = material if material != null else wall_material()
+	var cp := CollisionPolygon2D.new()
+	cp.polygon = points
+	body.add_child(cp)
+	var poly := Polygon2D.new()
+	poly.polygon = points
+	poly.color = Color(0.14, 0.14, 0.22)
+	body.add_child(poly)
+	var closed := PackedVector2Array(points)
+	closed.append(points[0])
+	var line := Line2D.new()
+	line.points = closed
+	line.width = 5.0
+	line.default_color = color
+	line.joint_mode = Line2D.LINE_JOINT_ROUND
 	body.add_child(line)
 	parent.add_child(body)
 	return body
@@ -69,10 +138,18 @@ static func make_post(parent: Node, center: Vector2, radius: float, post_name: S
 	circle.radius = radius
 	cs.shape = circle
 	body.add_child(cs)
+	var shadow := Polygon2D.new()
+	shadow.polygon = circle_points(Vector2.ZERO, radius + 3.0, 20)
+	shadow.color = Color(0.02, 0.02, 0.05, 0.85)
+	body.add_child(shadow)
 	var poly := Polygon2D.new()
 	poly.polygon = circle_points(Vector2.ZERO, radius, 20)
 	poly.color = color
 	body.add_child(poly)
+	var cap := Polygon2D.new()
+	cap.polygon = circle_points(Vector2(-radius * 0.25, -radius * 0.25), radius * 0.45, 12)
+	cap.color = color.lightened(0.5)
+	body.add_child(cap)
 	parent.add_child(body)
 	return body
 
@@ -92,6 +169,19 @@ static func circle_points(center: Vector2, radius: float, steps: int) -> PackedV
 		var a := TAU * float(i) / float(steps)
 		pts.append(center + Vector2(cos(a), sin(a)) * radius)
 	return pts
+
+
+## Aplica o shader de balanço/brilho de idle a um sprite (chefe, inimigo).
+static func apply_idle_shader(sprite: CanvasItem, sway: float, glow: float, speed: float, phase: float = 0.0) -> void:
+	if sprite == null or not ResourceLoader.exists("res://assets/shaders/idle_sway.gdshader"):
+		return
+	var mat := ShaderMaterial.new()
+	mat.shader = load("res://assets/shaders/idle_sway.gdshader")
+	mat.set_shader_parameter("sway_amount", sway)
+	mat.set_shader_parameter("glow_amount", glow)
+	mat.set_shader_parameter("sway_speed", speed)
+	mat.set_shader_parameter("phase", phase)
+	sprite.material = mat
 
 
 ## Aplica uma textura a um Sprite2D e escala para que o maior lado tenha target_px.

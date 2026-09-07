@@ -77,7 +77,20 @@ func _process(delta: float) -> void:
 	if _flash > 0.0:
 		_flash = maxf(_flash - delta * 6.0, 0.0)
 		sprite.modulate = Color.WHITE.lerp(Color(2.0, 1.2, 1.2), _flash)
-	sprite.position.y = sin(Time.get_ticks_msec() * 0.008) * 3.0
+	var tm := Time.get_ticks_msec() * 0.001
+	sprite.position.y = sin(tm * 7.0) * 4.0
+	if not _flap.is_empty() and alive:
+		_flap_t += delta
+		var idx := int(_flap_t / 0.09) % _flap.size()
+		var want: Texture2D = _flap[idx]
+		if sprite.texture != want:
+			var flip := sprite.flip_h
+			sprite.texture = want
+			var base_tex: Texture2D = _flap[0]
+			var s := _target_px / maxf(float(base_tex.get_width()), 1.0)
+			sprite.scale = Vector2(s, s)
+			sprite.set_meta("base_scale", sprite.scale)
+			sprite.flip_h = flip
 
 
 func on_ball_hit(ball: Ball, impact_speed: float, hit_pos: Vector2, _normal: Vector2) -> void:
@@ -126,9 +139,31 @@ func _on_died(points: int) -> void:
 		_respawn_left = data.respawn_seconds
 
 
+var _frame_open: Texture2D
+var _frame_up: Texture2D
+var _flap: Array = []
+var _flap_t := 0.0
+var _target_px := 76.0
+
+
+func set_flap_frames(open_tex: Texture2D, up_tex: Texture2D) -> void:
+	_frame_open = open_tex
+	_frame_up = up_tex
+
+
+func apply_frames(art_dir: String, base_name: String, target_px: float) -> void:
+	_target_px = target_px
+	var fr := SpriteAnimator.load_frames(art_dir, base_name)
+	_flap = fr.flap
+	if _flap.is_empty() and not (fr.idle as Array).is_empty():
+		_flap = [fr.idle[0]]
+
+
 func apply_skin(texture: Texture2D, target_px: float, hp_scale: float) -> void:
+	_target_px = target_px
 	if texture != null:
 		TableGeometry.fit_sprite(sprite, texture, target_px)
+		_frame_open = texture
 	var new_hp := maxi(1, int(round(data.max_hp * hp_scale)))
 	health.max_hp = new_hp
 	if alive:

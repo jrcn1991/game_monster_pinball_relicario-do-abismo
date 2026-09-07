@@ -8,7 +8,7 @@ const PLAY_W := 760.0
 const H := 1080.0
 const LANE_X := 760.0
 const LANE_EXIT_Y := 330.0
-const SERVE_POS := Vector2(790.0, 1020.0)
+const SERVE_POS := Vector2(799.0, 1016.0)
 const LOCK_POS := Vector2(150.0, 330.0)
 const BOSS_POS := Vector2(410.0, 190.0)
 const BALL_SAVE_SECONDS := 8.0
@@ -136,15 +136,20 @@ func apply_stage(index: int) -> void:
 		_bg_sprite.scale = Vector2(W / bg_tex.get_width(), H / bg_tex.get_height())
 	for s in skeletons:
 		s.apply_skin(st.tex("enemy_static"), 84.0, st.enemy_hp_scale)
+		s.apply_frames(st.art_dir, "enemy_static", 84.0)
 		s.attack_interval_min = 6.0 * st.skeleton_attack_scale
 		s.attack_interval_max = 9.0 * st.skeleton_attack_scale
 	for b in bats:
 		b.apply_skin(st.tex("enemy_flyer"), 76.0, st.enemy_hp_scale)
+		b.set_flap_frames(st.tex("enemy_flyer"), st.tex("enemy_flyer_up"))
+		b.apply_frames(st.art_dir, "enemy_flyer", 76.0)
 		b.move_speed = st.flyer_speed
 	guardian.apply_skin(st.tex("enemy_guardian"), 118.0, st.enemy_hp_scale)
+	guardian.apply_frames(st.art_dir, "enemy_guardian", 118.0)
 	guardian.shield.apply_skin(st.tex("guardian_shield"))
 	guardian.fire_interval = 6.5 * st.projectile_interval_scale
 	boss.apply_skin(st.tex("boss"), 250.0, st.boss_phase_hp, st.projectile_interval_scale)
+	boss.apply_frames(st.art_dir, 250.0)
 	stage_changed.emit(st, stage_index, stages.size())
 
 
@@ -185,9 +190,9 @@ func _build_walls() -> void:
 	var outer := PackedVector2Array([Vector2(0, H), Vector2(0, 320)])
 	outer = G.concat(outer, G.arc_points(Vector2(410, 320), 410, 300, 180, 360, 48))
 	outer.append(Vector2(W, H))
-	G.make_wall(static_layer, outer, "OuterWall", 8.0)
+	G.make_wall(static_layer, outer, "OuterWall", 8.0, TableGeometry.WALL_COLOR, null, 1)
 	# Divisória da canaleta do lançador + piso da canaleta.
-	G.make_wall(static_layer, PackedVector2Array([Vector2(LANE_X, H), Vector2(LANE_X, 400)]), "LaneDivider", 6.0)
+	G.make_wall(static_layer, PackedVector2Array([Vector2(LANE_X, H), Vector2(LANE_X, 400)]), "LaneDivider", 6.0, TableGeometry.WALL_COLOR, null, -1)
 	G.make_wall(static_layer, PackedVector2Array([Vector2(LANE_X, 1040), Vector2(W, 1040)]), "LaneFloor", 6.0)
 	# Portão de mão única no topo da canaleta.
 	lane_gate = LaneGate.new()
@@ -199,10 +204,17 @@ func _build_walls() -> void:
 	# Divisórias inferiores (outlane / inlane / apron até o pivô do flipper).
 	# A rampa do apron termina tangente ao topo do pivô do flipper (mesmo ângulo de repouso, 28°),
 	# para a bola rolar da inlane direto para a pá sem degrau.
-	G.make_wall(static_layer, PackedVector2Array([Vector2(60, 740), Vector2(60, 900), Vector2(245, 1000), Vector2(240, H)]), "LeftApron", 6.0)
-	G.make_wall(static_layer, PackedVector2Array([Vector2(700, 740), Vector2(700, 900), Vector2(515, 1000), Vector2(520, H)]), "RightApron", 6.0)
-	G.make_post(static_layer, Vector2(60, 740), 7.0, "PostL")
-	G.make_post(static_layer, Vector2(700, 740), 7.0, "PostR")
+	# Outlanes com 46 px (bola tem 28): entrar nelas exige um ângulo real, não só rolar pela parede.
+	# A rampa (28°) termina exatamente no ponto de tangência do topo do pivô do flipper (256.6, 999.6),
+	# continuando na mesma linha da face superior da pá em repouso: sem bolsa em "V" entre rampa e pivô.
+	G.make_wall(static_layer, PackedVector2Array([Vector2(46, 740), Vector2(46, 895), Vector2(256.6, 999.6), Vector2(240, H)]), "LeftApron", 6.0, TableGeometry.WALL_COLOR, null, 0, 8.0)
+	G.make_wall(static_layer, PackedVector2Array([Vector2(714, 740), Vector2(714, 895), Vector2(503.4, 999.6), Vector2(520, H)]), "RightApron", 6.0, TableGeometry.WALL_COLOR, null, 0, 8.0)
+	G.make_post(static_layer, Vector2(46, 740), 9.0, "PostL", TableGeometry.WALL_HIGHLIGHT, TableGeometry.rubber_material())
+	G.make_post(static_layer, Vector2(714, 740), 9.0, "PostR", TableGeometry.WALL_HIGHLIGHT, TableGeometry.rubber_material())
+	# Defletores no fim das órbitas laterais: a bola que desce colada na parede é jogada para dentro
+	# (inlane/slingshot) em vez de cair direto na outlane.
+	G.make_solid(static_layer, PackedVector2Array([Vector2(-10, 540), Vector2(44, 665), Vector2(-10, 700)]), "DeflectorL", TableGeometry.WALL_HIGHLIGHT, TableGeometry.rubber_material())
+	G.make_solid(static_layer, PackedVector2Array([Vector2(LANE_X, 540), Vector2(LANE_X - 44, 665), Vector2(LANE_X, 700)]), "DeflectorR", TableGeometry.WALL_HIGHLIGHT, TableGeometry.rubber_material())
 	# Arcos internos da arena do chefe (abertos no topo e embaixo).
 	var inner_left := G.arc_points(Vector2(410, 320), 320, 230, 180, 250, 16)
 	var inner_right := G.arc_points(Vector2(410, 320), 320, 230, 290, 360, 16)
@@ -243,7 +255,7 @@ func _build_flippers_and_plunger() -> void:
 	components_layer.add_child(flipper_right)
 	plunger = Plunger.new()
 	plunger.name = "Plunger"
-	plunger.position = Vector2(790, 1044)
+	plunger.position = Vector2(799, 1040)
 	plunger.launched.connect(_on_plunger_launched)
 	components_layer.add_child(plunger)
 
@@ -261,7 +273,7 @@ func _build_components() -> void:
 	sl.name = "SlingLeft"
 	# Borda inferior paralela à rampa do apron e afastada 45 px: a inlane passa por baixo.
 	sl.position = Vector2(155, 790)
-	sl.points_local = PackedVector2Array([Vector2(0, 0), Vector2(0, 110), Vector2(85, 156)])
+	sl.points_local = PackedVector2Array([Vector2(0, 0), Vector2(0, 109), Vector2(85, 151)])
 	sl.active_face_from = 0
 	sl.active_face_to = 2
 	sl.target_id = "sling_left"
@@ -269,7 +281,7 @@ func _build_components() -> void:
 	var sr: Slingshot = slingshot_scene.instantiate()
 	sr.name = "SlingRight"
 	sr.position = Vector2(605, 790)
-	sr.points_local = PackedVector2Array([Vector2(0, 0), Vector2(0, 110), Vector2(-85, 156)])
+	sr.points_local = PackedVector2Array([Vector2(0, 0), Vector2(0, 109), Vector2(-85, 151)])
 	sr.active_face_from = 0
 	sr.active_face_to = 2
 	sr.target_id = "sling_right"
@@ -290,7 +302,7 @@ func _build_components() -> void:
 	# Rollovers "ELOS".
 	lane_group = LaneGroup.new()
 	lane_group.name = "Lanes"
-	var lane_defs := [["E", Vector2(30, 790)], ["L", Vector2(95, 790)], ["O", Vector2(665, 790)], ["S", Vector2(730, 790)]]
+	var lane_defs := [["E", Vector2(23, 800)], ["L", Vector2(100, 790)], ["O", Vector2(660, 790)], ["S", Vector2(737, 800)]]
 	for d in lane_defs:
 		var r := Rollover.new()
 		r.name = "Lane" + d[0]
@@ -511,14 +523,13 @@ func _on_ball_drained(ball: Ball) -> void:
 	GameManager.on_all_balls_lost()
 
 
-## Bola salva: volta ao lançador e é lançada automaticamente.
+## Bola salva: volta ao lançador; o jogador escolhe a força do novo lançamento.
+## (Um relançamento automático fixo repetia a mesma trajetória e caía na mesma outlane.)
 func _serve_and_kick() -> void:
 	var b := serve_ball(false)
 	if b != null:
-		await get_tree().physics_frame
-		await get_tree().physics_frame
-		if is_instance_valid(b) and plunger.ball == b:
-			plunger.launch(0.75)
+		ball_save_left = maxf(ball_save_left, 3.0)  # pequena graça para o relançamento
+		ball_save_source = "resave"
 
 
 func _on_ball_stuck_rescue(ball: Ball) -> void:
@@ -661,6 +672,10 @@ func _on_boss_summon(count: int) -> void:
 		sk.position = positions[i]
 		sk.respawns = false
 		sk.lance_direction = Vector2(-1 if positions[i].x > 410 else 1, 0.5)
+		sk.ready.connect(func():
+			sk.apply_skin(current_stage().tex("enemy_static"), 84.0, current_stage().enemy_hp_scale)
+			sk.apply_frames(current_stage().art_dir, "enemy_static", 84.0)
+		)
 		enemies_layer.call_deferred("add_child", sk)
 		summoned.append(sk)
 

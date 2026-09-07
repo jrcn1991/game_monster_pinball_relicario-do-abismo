@@ -6,7 +6,7 @@ signal rolled(rollover: Rollover)
 
 @export var letter: String = "E"
 @export var points: int = 300
-@export var size: Vector2 = Vector2(36.0, 22.0)
+@export var size: Vector2 = Vector2(30.0, 22.0)
 
 var lit := false
 var _label: Label

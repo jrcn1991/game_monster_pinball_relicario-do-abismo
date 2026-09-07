@@ -14,10 +14,11 @@ func _ready() -> void:
 	collision_mask = 0
 	physics_material_override = TableGeometry.wall_material()
 	_shape = CollisionShape2D.new()
-	var seg := SegmentShape2D.new()
-	seg.a = from_point
-	seg.b = to_point
-	_shape.shape = seg
+	var d := (to_point - from_point).normalized()
+	var n := Vector2(d.y, -d.x) * 5.0
+	var poly := ConvexPolygonShape2D.new()
+	poly.points = PackedVector2Array([from_point + n, to_point + n, to_point - n, from_point - n])
+	_shape.shape = poly
 	add_child(_shape)
 	_line = Line2D.new()
 	_line.points = PackedVector2Array([from_point, to_point])

@@ -18,6 +18,7 @@ var sprite: Sprite2D
 var _flash := 0.0
 var _shape: CollisionShape2D
 var kills := 0
+var animator: SpriteAnimator
 var _respawn_left := 0.0
 var _rng := RandomNumberGenerator.new()
 
@@ -78,6 +79,8 @@ func _process(delta: float) -> void:
 	if _flash > 0.0:
 		_flash = maxf(_flash - delta * 6.0, 0.0)
 		sprite.modulate = Color.WHITE.lerp(Color(2.0, 1.2, 1.2), _flash)
+	elif alive and sprite.has_meta("base_scale"):
+		sprite.scale = sprite.get_meta("base_scale")
 
 
 func on_ball_hit(ball: Ball, impact_speed: float, hit_pos: Vector2, _normal: Vector2) -> void:
@@ -108,6 +111,8 @@ func take_area_damage(amount: int, origin: Vector2) -> void:
 
 func _on_damaged(amount: int, hit_position: Vector2, critical: bool) -> void:
 	_flash = 1.0
+	if animator != null:
+		animator.play("hurt", 0.35)
 	enemy_damaged.emit(self, amount, hit_position)
 	SignalBus.enemy_damaged.emit(self, amount, hit_position, critical)
 
@@ -134,6 +139,20 @@ func _on_died(points: int) -> void:
 
 func _on_death_extra() -> void:
 	pass
+
+
+## Quadros de animação reais (idle/attack/hurt) carregados da pasta da fase.
+func apply_frames(art_dir: String, base_name: String, target_px: float) -> void:
+	var fr := SpriteAnimator.load_frames(art_dir, base_name)
+	if (fr.idle as Array).is_empty():
+		return
+	for c in sprite.get_children():
+		c.queue_free()
+	if animator == null:
+		animator = SpriteAnimator.new()
+		animator.name = "Animator"
+		add_child(animator)
+	animator.setup(sprite, fr, target_px, true)
 
 
 ## Troca a arte (fase) e a vida máxima. target_px = tamanho do maior lado na mesa.

@@ -13,7 +13,7 @@ const MAX_SPEED := 2500.0
 const STUCK_SPEED := 25.0
 const STUCK_SECONDS := 4.0
 const MAX_STUCK_RESCUES := 3
-const TRAIL_LENGTH := 14
+const TRAIL_LENGTH := 22
 const FLIPPER_ASSIST := 0.95
 
 var consecrated := false
@@ -27,6 +27,7 @@ var _stuck_rescues := 0
 var _trail: Line2D
 var _sprite: Sprite2D
 var _halo: Sprite2D
+var _sparks: CPUParticles2D
 var _rng := RandomNumberGenerator.new()
 var id_label := 0  # para debug e testes
 var anomalies := 0  # contagens de eventos anormais (fora da mesa etc.) para testes
@@ -46,6 +47,28 @@ func _ready() -> void:
 	if _trail:
 		_trail.top_level = true
 		_trail.clear_points()
+		var curve := Curve.new()
+		curve.add_point(Vector2(0.0, 0.1))
+		curve.add_point(Vector2(1.0, 1.0))
+		_trail.width_curve = curve
+	if _sprite and ResourceLoader.exists("res://assets/art/props/ball.png"):
+		TableGeometry.fit_sprite(_sprite, load("res://assets/art/props/ball.png"), RADIUS * 2.15)
+	if _halo and ResourceLoader.exists("res://assets/art/props/ball.png"):
+		TableGeometry.fit_sprite(_halo, load("res://assets/art/props/ball.png"), RADIUS * 3.4)
+	_sparks = CPUParticles2D.new()
+	_sparks.amount = 24
+	_sparks.lifetime = 0.35
+	_sparks.local_coords = false
+	_sparks.direction = Vector2(0, 0)
+	_sparks.spread = 180.0
+	_sparks.initial_velocity_min = 10.0
+	_sparks.initial_velocity_max = 60.0
+	_sparks.gravity = Vector2.ZERO
+	_sparks.scale_amount_min = 1.5
+	_sparks.scale_amount_max = 3.5
+	_sparks.color = Color(0.96, 0.83, 0.37, 0.8)
+	_sparks.emitting = true
+	add_child(_sparks)
 	_update_colors()
 
 
@@ -75,13 +98,20 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(_delta: float) -> void:
+	# (o nome _delta é usado abaixo para girar o halo)
 	if _trail:
 		_trail.add_point(global_position)
 		while _trail.get_point_count() > TRAIL_LENGTH:
 			_trail.remove_point(0)
 	if _halo:
+		var base_h: Vector2 = _halo.get_meta("base_scale") if _halo.has_meta("base_scale") else Vector2(1.6, 1.6)
 		var s := 1.0 + clampf(linear_velocity.length() / 2500.0, 0.0, 1.0) * 0.5
-		_halo.scale = Vector2(s, s)
+		_halo.scale = base_h * s
+		_halo.rotation += _delta * 0.8
+	if _sparks:
+		var sp := linear_velocity.length()
+		_sparks.emitting = sp > 250.0
+		_sparks.amount = int(clampf(sp / 60.0, 8.0, 40.0))
 
 
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
@@ -128,8 +158,10 @@ func set_consecrated(value: bool) -> void:
 
 func _update_colors() -> void:
 	if _trail:
-		_trail.default_color = Color(0.96, 0.83, 0.37, 0.85) if consecrated else Color(0.78, 0.49, 1.0, 0.6)
-		_trail.width = 12.0 if consecrated else 8.0
+		_trail.default_color = Color(0.96, 0.83, 0.37, 0.9) if consecrated else Color(0.85, 0.6, 1.0, 0.75)
+		_trail.width = 26.0 if consecrated else 20.0
+	if _sparks:
+		_sparks.color = Color(1.0, 0.9, 0.5, 0.9) if consecrated else Color(0.8, 0.55, 1.0, 0.7)
 	if _halo:
 		_halo.modulate = Color(1.0, 0.85, 0.35, 0.55) if consecrated else Color(0.78, 0.49, 1.0, 0.35)
 	if _sprite:
