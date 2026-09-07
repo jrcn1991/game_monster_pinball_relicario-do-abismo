@@ -69,6 +69,7 @@ func change_state(new_state: State) -> bool:
 	state = new_state
 	_log("%s -> %s" % [State.keys()[previous_state], State.keys()[state]])
 	get_tree().paused = (state == State.PAUSED)
+	Engine.time_scale = 1.0
 	state_changed.emit(previous_state, state)
 	_transitioning = false
 	return true

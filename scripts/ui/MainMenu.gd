@@ -14,7 +14,9 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var bg := TextureRect.new()
-	if ResourceLoader.exists("res://assets/art/menu_bg.png"):
+	if ResourceLoader.exists("res://assets/art/ui/menu_bg.png"):
+		bg.texture = load("res://assets/art/ui/menu_bg.png")
+	elif ResourceLoader.exists("res://assets/art/menu_bg.png"):
 		bg.texture = load("res://assets/art/menu_bg.png")
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.stretch_mode = TextureRect.STRETCH_SCALE

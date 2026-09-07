@@ -21,7 +21,9 @@ func _ready() -> void:
 	_shape.shape = circle
 	add_child(_shape)
 	_sprite = Sprite2D.new()
-	if ResourceLoader.exists("res://assets/art/portal_boss.png"):
+	if ResourceLoader.exists("res://assets/art/props/portal.png"):
+		TableGeometry.fit_sprite(_sprite, load("res://assets/art/props/portal.png"), radius * 3.2)
+	elif ResourceLoader.exists("res://assets/art/portal_boss.png"):
 		_sprite.texture = load("res://assets/art/portal_boss.png")
 	add_child(_sprite)
 	body_entered.connect(_on_body_entered)

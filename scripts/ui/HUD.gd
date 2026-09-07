@@ -22,6 +22,8 @@ var tilt_bar: ProgressBar
 var lock_label: Label
 var record_label: Label
 var seed_label: Label
+var stage_label: Label
+var boss_name_label: Label
 var _message_left := 0.0
 var _messages: Array = []  # fila de [texto, segundos]
 
@@ -55,6 +57,9 @@ func _ready() -> void:
 	SignalBus.ball_locked.connect(func(n): lock_label.text = "TRAVA %d/2" % n)
 	SignalBus.multiball_started.connect(func(_n): lock_label.text = Loc.t("multiball"))
 	SignalBus.multiball_ended.connect(func(): lock_label.text = "TRAVA 0/2")
+	var t0 := GameManager.table
+	if t0 != null and t0.has_signal("stage_changed"):
+		t0.stage_changed.connect(_on_stage_changed)
 	_on_score(0)
 	_on_balls(GameManager.balls_left)
 	_on_mult(1)
@@ -64,8 +69,8 @@ func _ready() -> void:
 
 func _panel(x: float, w: float) -> PanelContainer:
 	var p := PanelContainer.new()
-	p.position = Vector2(x, 84)
-	p.size = Vector2(w, 940)
+	p.position = Vector2(x, 150)
+	p.size = Vector2(w, 860)
 	p.add_theme_stylebox_override("panel", UITheme.panel_style(Color(0.0353, 0.0392, 0.0706, 0.0), Color(0, 0, 0, 0), 0))
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(p)
@@ -74,18 +79,22 @@ func _panel(x: float, w: float) -> PanelContainer:
 
 func _build_left_panel() -> void:
 	var bgp := TextureRect.new()
-	if ResourceLoader.exists("res://assets/art/side_panel.png"):
+	if ResourceLoader.exists("res://assets/art/ui/side_panel.png"):
+		bgp.texture = load("res://assets/art/ui/side_panel.png")
+	elif ResourceLoader.exists("res://assets/art/side_panel.png"):
 		bgp.texture = load("res://assets/art/side_panel.png")
 	bgp.position = Vector2(0, 0)
 	bgp.size = Vector2(550, 1080)
 	bgp.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bgp)
-	var p := _panel(60, 430)
+	var p := _panel(95, 370)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 10)
 	p.add_child(v)
 	v.add_child(UITheme.make_label(Loc.t("title"), 30, UITheme.BRONZE_LIGHT))
-	v.add_child(UITheme.make_label(Loc.t("subtitle"), 18, UITheme.VIOLET_LIGHT))
+	stage_label = UITheme.make_label(Loc.t("subtitle"), 18, UITheme.VIOLET_LIGHT)
+	stage_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	v.add_child(stage_label)
 	v.add_child(HSeparator.new())
 	v.add_child(UITheme.make_label(Loc.t("score"), 22, UITheme.BRONZE_LIGHT))
 	score_label = UITheme.make_label("0", 64, UITheme.IVORY)
@@ -133,14 +142,16 @@ func _build_left_panel() -> void:
 
 func _build_right_panel() -> void:
 	var bgp := TextureRect.new()
-	if ResourceLoader.exists("res://assets/art/side_panel.png"):
+	if ResourceLoader.exists("res://assets/art/ui/side_panel.png"):
+		bgp.texture = load("res://assets/art/ui/side_panel.png")
+	elif ResourceLoader.exists("res://assets/art/side_panel.png"):
 		bgp.texture = load("res://assets/art/side_panel.png")
 	bgp.flip_h = true
 	bgp.position = Vector2(1370, 0)
 	bgp.size = Vector2(550, 1080)
 	bgp.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bgp)
-	var p := _panel(1430, 430)
+	var p := _panel(1455, 370)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 10)
 	p.add_child(v)
@@ -172,7 +183,8 @@ func _build_right_panel() -> void:
 	boss_box = VBoxContainer.new()
 	boss_box.visible = false
 	v.add_child(boss_box)
-	boss_box.add_child(UITheme.make_label(Loc.t("boss"), 22, UITheme.DANGER))
+	boss_name_label = UITheme.make_label(Loc.t("boss"), 22, UITheme.DANGER)
+	boss_box.add_child(boss_name_label)
 	boss_bar = ProgressBar.new()
 	boss_bar.max_value = 60
 	boss_bar.value = 60
@@ -298,6 +310,14 @@ func _on_boss_phase(phase: int) -> void:
 	# phase: 1..3 = fases, 4 = derrotado
 	if phase >= 1 and phase <= 3:
 		boss_phase_label.text = Loc.t("boss_phase") % phase
+
+
+func _on_stage_changed(stage: StageData, index: int, total: int) -> void:
+	stage_label.text = "Fase %d/%d: %s\n%s" % [index + 1, total, stage.display_name, stage.subtitle]
+	boss_name_label.text = stage.boss_name.to_upper()
+	_reset_seals()
+	boss_box.visible = false
+	lock_label.text = "TRAVA 0/2"
 
 
 func _on_game_started(seed_value: int) -> void:

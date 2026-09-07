@@ -115,13 +115,14 @@ func _sweep_correct(old_rot: float, new_rot: float) -> void:
 		if dist > length + tip_radius + Ball.RADIUS or dist < 0.001:
 			continue
 		var local_old := rel.rotated(-old_rot)
-		var ang := atan2(local_old.y, local_old.x)
+		var ang_old := atan2(local_old.y, local_old.x)
+		var ang_new := ang_old - delta_rot
 		var along := clampf(local_old.x, 0.0, length)
 		var reach := _thickness_at(along) + Ball.RADIUS
-		var margin := asin(clampf(reach / dist, 0.0, 1.0))
-		var lo := minf(0.0, delta_rot) - margin
-		var hi := maxf(0.0, delta_rot) + margin
-		if ang < lo or ang > hi:
+		# Só corrige se a bola estava À FRENTE do movimento (ou encostada) e a pá passou pelo
+		# centro dela neste tick. Bolas atrás do movimento (ex.: apoiadas na pá enquanto ela
+		# desce) nunca são tocadas: o solver cuida do contato normal.
+		if side * ang_old < -0.02 or side * ang_new >= 0.0:
 			continue
 		# Está dentro do setor varrido: reposiciona à frente da face dianteira da nova pose.
 		var new_local := Vector2(along, side * (reach + 1.0))

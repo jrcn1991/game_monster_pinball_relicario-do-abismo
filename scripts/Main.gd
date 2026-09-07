@@ -15,6 +15,7 @@ var _autoplay_timer := 0.0
 var _screenshot_dir := ""
 var _shot_index := 0
 var _shot_timer := 0.0
+var _autoplay_stage := 0
 
 
 func _ready() -> void:
@@ -34,6 +35,10 @@ func _ready() -> void:
 	overlay_layer.layer = 10
 	add_child(overlay_layer)
 	effects.setup(table, overlay_layer)
+	var feel := HitFeel.new()
+	feel.name = "HitFeel"
+	add_child(feel)
+	feel.setup(table)
 	hud = HUD.new()
 	hud.name = "HUD"
 	ui_layer.add_child(hud)
@@ -60,6 +65,8 @@ func _ready() -> void:
 			autoplay = true
 		elif arg.begins_with("--screenshots="):
 			_screenshot_dir = arg.trim_prefix("--screenshots=")
+		elif arg.begins_with("--stage="):
+			_autoplay_stage = int(arg.trim_prefix("--stage=")) - 1
 	if autoplay:
 		call_deferred("_start_autoplay")
 
@@ -81,6 +88,8 @@ func _apply_state(state: int) -> void:
 func _start_autoplay() -> void:
 	table.input_override = true
 	GameManager.start_new_game(12345)
+	if _autoplay_stage > 0:
+		table.apply_stage(_autoplay_stage)
 
 
 func _physics_process(delta: float) -> void:

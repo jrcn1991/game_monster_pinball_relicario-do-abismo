@@ -92,7 +92,9 @@ func on_ball_hit(ball: Ball, impact_speed: float, hit_pos: Vector2, _normal: Vec
 			table.add_mana(data.mana_on_hit)
 			if ball.consecrated:
 				table.magic.shockwave(hit_pos, self)
-		AudioManager.play_sfx("enemy_crit" if result.critical else "enemy_hit", 0.08, 0.0, 30)
+		AudioManager.play_sfx("enemy_crit" if result.critical else "enemy_hit", 0.08, 4.0 if result.critical else 2.0, 30)
+		if result.critical:
+			AudioManager.play_sfx("boss_hit", 0.05, -6.0, 60)
 		SignalBus.impact.emit(hit_pos, Combat.impact_intensity(impact_speed) * (1.0 if result.critical else 0.6))
 		if result.critical:
 			SignalBus.request_flash.emit(Color(0.78, 0.49, 1.0), 0.15)
@@ -132,6 +134,18 @@ func _on_died(points: int) -> void:
 
 func _on_death_extra() -> void:
 	pass
+
+
+## Troca a arte (fase) e a vida máxima. target_px = tamanho do maior lado na mesa.
+func apply_skin(texture: Texture2D, target_px: float, hp_scale: float) -> void:
+	if texture != null:
+		for c in sprite.get_children():
+			c.queue_free()
+		TableGeometry.fit_sprite(sprite, texture, target_px)
+	var new_hp := maxi(1, int(round(data.max_hp * hp_scale)))
+	health.max_hp = new_hp
+	if alive:
+		health.hp = new_hp
 
 
 func revive() -> void:

@@ -17,6 +17,14 @@
 - Nenhum bloqueante conhecido. Avisos benignos ao sair: "2 ObjectDB instances leaked" e "1 resource still in use" (tweens/streams no encerramento).
 - Balanceamento não validado por pessoa: a IA de teste perde as 3 bolas em ~15 s; a partida humana deve durar bem mais.
 
+## Atualização 2026-09-07 (após playtest do autor)
+- Corrigido: bola apoiada na pá era empurrada para baixo quando o flipper descia (correção de varredura agia em bolas atrás do movimento).
+- Bola fora da mesa agora volta ao lançador sem perder vida; poste no topo da canaleta.
+- Impacto: hit-stop, números de dano, anéis de choque, partículas maiores, tremor e sons mais fortes (`scripts/ui/HitFeel.gd`).
+- Três fases (`StageData`, `data/stages/`), arte original gerada por IA em pixel art gótica 32-bit para fundos, chefes, inimigos, props e UI.
+- Controles de toque para celular (`TouchControls`), build Web publicado em GitHub Pages.
+- Suíte: 121 verificações passando (inclui avanço de fase e vida do chefe por fase).
+
 ## Verificação visual
 - `godot --path . -- --autoplay --screenshots=DIR` gera 8 capturas jogando sozinho; conferidas manualmente: HUD, mesa, inimigos, chefe, mensagens e flippers renderizam na RTX 3060 (OpenGL Compatibility).
 

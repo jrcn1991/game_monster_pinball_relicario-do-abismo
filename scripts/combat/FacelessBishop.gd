@@ -10,8 +10,11 @@ signal phase_changed(phase: int)
 signal defeated()
 signal summon_requested(count: int)
 
-const PHASE_HP := 20
+const PHASE_HP := 20  # padrão; a fase pode alterar via set_phase_hp()
 const TOTAL_HP := PHASE_HP * 3
+var phase_hp: int = PHASE_HP
+var total_hp: int = TOTAL_HP
+var interval_scale := 1.0
 const TRANSITION_INVULN := 1.5
 const WEAK_SWITCH_SECONDS := 4.0
 
@@ -44,7 +47,7 @@ func _ready() -> void:
 	_rng.seed = GameManager.run_seed + 4242
 	health = HealthComponent.new()
 	health.name = "Health"
-	health.max_hp = TOTAL_HP
+	health.max_hp = total_hp
 	health.points_on_death = 25000
 	health.invulnerability_ms = Combat.INVULN_MS
 	add_child(health)
@@ -95,7 +98,7 @@ func _physics_process(delta: float) -> void:
 	if (phase == Phase.PHASE2 or phase == Phase.PHASE3) and GameManager.is_ball_in_play():
 		_proj_timer -= delta
 		if _proj_timer <= 0.0:
-			_proj_timer = projectile_interval_p2 if phase == Phase.PHASE2 else projectile_interval_p3
+			_proj_timer = (projectile_interval_p2 if phase == Phase.PHASE2 else projectile_interval_p3) * interval_scale
 			_fire()
 
 
@@ -132,11 +135,22 @@ func _fire() -> void:
 func awaken() -> void:
 	if phase != Phase.SEALED:
 		return
-	health.revive(TOTAL_HP)
+	health.revive(total_hp)
 	_set_phase(Phase.PHASE1)
 	AudioManager.play_sfx("portal_open", 0.0, 0.0)
 	SignalBus.boss_awakened.emit()
 	SignalBus.boss_health_changed.emit(health.hp, health.max_hp)
+
+
+## Arte e dificuldade da fase.
+func apply_skin(texture: Texture2D, target_px: float, new_phase_hp: int, new_interval_scale: float) -> void:
+	if texture != null:
+		TableGeometry.fit_sprite(_sprite, texture, target_px)
+	phase_hp = maxi(1, new_phase_hp)
+	total_hp = phase_hp * 3
+	interval_scale = new_interval_scale
+	if phase == Phase.SEALED:
+		health.revive(total_hp)
 
 
 func is_active() -> bool:
@@ -145,7 +159,8 @@ func is_active() -> bool:
 
 func reset_boss() -> void:
 	phase = Phase.SEALED
-	health.revive(TOTAL_HP)
+	health.revive(total_hp)
+	_sprite.modulate.a = 1.0
 	health.external_invulnerable = false
 	_transition_left = 0.0
 	_shape.set_deferred("disabled", false)
@@ -268,9 +283,9 @@ func _on_damaged(_amount: int, _hit_position: Vector2, _critical: bool) -> void:
 	_flash = 1.0
 	SignalBus.boss_health_changed.emit(health.hp, health.max_hp)
 	# Transições de fase pelos limiares de vida (sinalizadas).
-	if phase == Phase.PHASE1 and health.hp <= PHASE_HP * 2:
+	if phase == Phase.PHASE1 and health.hp <= phase_hp * 2:
 		_set_phase(Phase.PHASE2)
-	elif phase == Phase.PHASE2 and health.hp <= PHASE_HP:
+	elif phase == Phase.PHASE2 and health.hp <= phase_hp:
 		_set_phase(Phase.PHASE3)
 
 

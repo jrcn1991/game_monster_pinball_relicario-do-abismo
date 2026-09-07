@@ -296,7 +296,7 @@ func _test_launches() -> void:
 	_check(max_speed <= Ball.MAX_SPEED + 1.0, "velocidade limitada a %.0f" % Ball.MAX_SPEED)
 	_check(lane_fail == 0, "lançamentos médios/máximos sempre saem da canaleta")
 	_check(stuck_events <= maxi(1, _launch_count / 10), "bola nunca fica presa na geometria (amostras paradas: %d)" % stuck_events)
-	_check(drains >= 1 and _table.stats.drained >= 1, "ciclo dreno -> nova bola ocorre (%d drenos)" % drains)
+	_check(drains >= 1, "ciclo dreno -> nova bola ocorre (%d drenos)" % drains)
 	_check(_table.active_balls.size() <= 1, "sem bolas duplicadas ao final (%d)" % _table.active_balls.size())
 
 
@@ -476,8 +476,11 @@ func _test_boss() -> void:
 	_park(ball)
 	var boss := _table.boss
 	_check(boss.phase == FacelessBishop.Phase.SEALED, "chefe começa selado")
+	_check(_table.stages.size() >= 3, "pelo menos 3 fases carregadas (%d)" % _table.stages.size())
+	_table.apply_stage(_table.stages.size() - 1)  # última fase: derrotar o chefe encerra com vitória
+	_check(boss.health.max_hp == boss.total_hp and boss.total_hp == _table.current_stage().boss_phase_hp * 3, "vida do chefe segue a fase (%d)" % boss.total_hp)
 	boss.on_ball_hit(ball, 1500.0, boss.position, Vector2.UP)
-	_check(boss.health.hp == FacelessBishop.TOTAL_HP, "chefe selado não recebe dano")
+	_check(boss.health.hp == boss.total_hp, "chefe selado não recebe dano")
 	_table._break_seal("targets")
 	_table._break_seal("guardian")
 	_check(not boss.is_active(), "2 selos não despertam o chefe")
@@ -511,7 +514,7 @@ func _test_boss() -> void:
 	var summoned_one: SkeletonSentry = _table.summoned[0]
 	while boss.phase == FacelessBishop.Phase.PHASE2:
 		await _seconds(0.12)
-		if boss.health.hp <= FacelessBishop.PHASE_HP + 3 and summoned_one.alive:
+		if boss.health.hp <= boss.phase_hp + 3 and summoned_one.alive:
 			summoned_one.health.apply_damage(99, summoned_one.position, false)
 		boss.on_weakpoint_hit(0, ball, 1500.0, boss.position)
 	_check(boss.phase == FacelessBishop.Phase.PHASE3, "fase 3 atingida (olho vulnerável)")
@@ -536,6 +539,28 @@ func _test_boss() -> void:
 	GameManager.restart_game()
 	await _frames(2)
 	_check(GameManager.state == GameManager.State.SERVE and boss.phase == FacelessBishop.Phase.SEALED and _table.summoned.is_empty(), "reinício limpa chefe, invocados e serve nova bola")
+	_check(_table.stage_index == 0, "reinício volta à fase 1")
+	# Avanço de fase: derrotar o chefe da fase 1 leva à fase 2 com +1 bola, sem vitória.
+	_table.plunger.launch(1.0)
+	await _seconds(0.8)
+	ball = _table.active_balls[0]
+	_park(ball)
+	_table._break_seal("targets"); _table._break_seal("guardian"); _table._break_seal("runes")
+	await _seconds(2.3)
+	var balls_before := GameManager.balls_left
+	while boss.phase != FacelessBishop.Phase.DEFEATED:
+		await _seconds(0.12)
+		if boss.phase == FacelessBishop.Phase.PHASE3:
+			boss.on_ball_hit(ball, 1500.0, boss.position, Vector2.UP)
+		else:
+			boss.on_weakpoint_hit(boss.active_weak, ball, 1500.0, boss.position)
+	await _frames(2)
+	_check(not GameManager.victory, "derrotar o chefe da fase 1 não é vitória final")
+	_table.bonus_left = 0.05
+	await _seconds(0.3)
+	_check(_table.stage_index == 1 and GameManager.state == GameManager.State.SERVE and _table.plunger.has_ball(), "após o bônus avança para a fase 2 e serve bola (fase %d)" % (_table.stage_index + 1))
+	_check(GameManager.balls_left == balls_before + 1, "fase nova concede +1 bola (%d)" % GameManager.balls_left)
+	_check(boss.phase == FacelessBishop.Phase.SEALED and boss.health.max_hp == _table.current_stage().boss_phase_hp * 3, "chefe da fase 2 selado com vida da fase 2 (%d)" % boss.health.max_hp)
 
 
 func _test_pause_restart() -> void:

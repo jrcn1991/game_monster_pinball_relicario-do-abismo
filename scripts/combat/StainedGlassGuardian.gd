@@ -124,6 +124,14 @@ class GuardianShield:
 			_sprite.add_child(line)
 		add_child(_sprite)
 
+	func apply_skin(texture: Texture2D) -> void:
+		if texture == null:
+			return
+		for c in _sprite.get_children():
+			c.queue_free()
+		TableGeometry.fit_sprite(_sprite, texture, radius * 2.0)
+		_sprite.position = Vector2(0, radius * 0.85)
+
 	func set_active(value: bool) -> void:
 		active = value
 		for cs in _shapes:

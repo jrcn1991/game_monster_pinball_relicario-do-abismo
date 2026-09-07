@@ -126,6 +126,15 @@ func _on_died(points: int) -> void:
 		_respawn_left = data.respawn_seconds
 
 
+func apply_skin(texture: Texture2D, target_px: float, hp_scale: float) -> void:
+	if texture != null:
+		TableGeometry.fit_sprite(sprite, texture, target_px)
+	var new_hp := maxi(1, int(round(data.max_hp * hp_scale)))
+	health.max_hp = new_hp
+	if alive:
+		health.hp = new_hp
+
+
 func revive() -> void:
 	alive = true
 	health.revive()

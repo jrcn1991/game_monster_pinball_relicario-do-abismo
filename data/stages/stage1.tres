@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="StageData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/table/StageData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "stage1"
+display_name = "Catedral Profanada"
+subtitle = "Quebre os três selos e desperte o bispo"
+boss_name = "Bispo Sem-Rosto"
+art_dir = "res://assets/art/stages/stage1"
+music = "ambient_loop"
+boss_music = "boss_loop"
+enemy_hp_scale = 1.0
+boss_phase_hp = 20
+projectile_interval_scale = 1.0
+flyer_speed = 130.0
+skeleton_attack_scale = 1.0

@@ -23,6 +23,10 @@ func _ready() -> void:
 	_shape.shape = rect
 	add_child(_shape)
 	_visual = get_node_or_null("Sprite")
+	if _visual is Sprite2D and ResourceLoader.exists("res://assets/art/props/drop.png"):
+		var spr := _visual as Sprite2D
+		spr.rotation = 0.0
+		TableGeometry.fit_sprite(spr, load("res://assets/art/props/drop.png"), size.x * 1.25)
 	if _visual == null:
 		var poly := Polygon2D.new()
 		poly.polygon = PackedVector2Array([Vector2(-size.x / 2, -size.y / 2), Vector2(size.x / 2, -size.y / 2), Vector2(size.x / 2, size.y / 2), Vector2(-size.x / 2, size.y / 2)])

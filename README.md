@@ -33,6 +33,12 @@ O binário do Godot está em `~/.local/bin/godot` (oficial, SHA512 verificado).
 
 Abusar do nudge enche a barra de **TILT** e trava os flippers por 3 s.
 
+## Fases
+
+Três mesas com a mesma geometria e arte, inimigos, chefe e dificuldade próprios: **Catedral Profanada** (Bispo Sem-Rosto),
+**Claustro dos Ecos** (Sineiro Enforcado) e **Olho do Abismo** (O Relicário). Derrotar o chefe e cumprir a sequência bônus
+avança de fase com +1 bola; vencer a terceira encerra a partida com vitória. Dados em `data/stages/*.tres`.
+
 ## Objetivo
 
 1. Quebre os **três Selos do Abismo**: derrube o banco de alvos, derrote o Guardião do Vitral e acenda as três runas.

@@ -25,16 +25,16 @@ func setup(table: Node2D, canvas: CanvasLayer) -> void:
 		var p := CPUParticles2D.new()
 		p.emitting = false
 		p.one_shot = true
-		p.amount = 14
-		p.lifetime = 0.45
+		p.amount = 22
+		p.lifetime = 0.55
 		p.explosiveness = 1.0
 		p.direction = Vector2(0, -1)
 		p.spread = 180.0
 		p.initial_velocity_min = 120.0
 		p.initial_velocity_max = 320.0
 		p.gravity = Vector2(0, 500)
-		p.scale_amount_min = 2.0
-		p.scale_amount_max = 5.0
+		p.scale_amount_min = 3.0
+		p.scale_amount_max = 8.0
 		p.color = Color(0.78, 0.49, 1.0)
 		add_child(p)
 		_bursts.append(p)
@@ -54,7 +54,7 @@ func _process(delta: float) -> void:
 		_flash_rect.color.a = 0.0
 	if _shake > 0.0 and _table != null:
 		_shake = maxf(_shake - delta * 3.0, 0.0)
-		var amp := _shake * (2.0 if SaveManager.reduce_shake else 9.0)
+		var amp := _shake * (2.0 if SaveManager.reduce_shake else 14.0)
 		_table.position = Vector2(550, 0) + Vector2(_rng.randf_range(-amp, amp), _rng.randf_range(-amp, amp))
 		if _shake <= 0.0:
 			_table.position = Vector2(550, 0)
@@ -70,7 +70,7 @@ func _burst(local_pos: Vector2, intensity: float, color: Color) -> void:
 	var p := _bursts[_burst_index]
 	_burst_index = (_burst_index + 1) % MAX_BURSTS
 	p.position = local_pos
-	p.amount = int(clampf(6.0 + intensity * 14.0, 6.0, 20.0))
+	p.amount = int(clampf(8.0 + intensity * 24.0, 8.0, 32.0))
 	p.color = color
 	p.initial_velocity_max = 180.0 + 260.0 * intensity
 	p.restart()

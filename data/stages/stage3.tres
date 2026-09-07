@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="StageData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/table/StageData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "stage3"
+display_name = "Olho do Abismo"
+subtitle = "O coração do relicário ainda bate"
+boss_name = "O Relicário"
+art_dir = "res://assets/art/stages/stage3"
+music = "ambient_loop"
+boss_music = "boss_loop"
+enemy_hp_scale = 1.7
+boss_phase_hp = 32
+projectile_interval_scale = 0.65
+flyer_speed = 215.0
+skeleton_attack_scale = 0.65

@@ -20,6 +20,11 @@ const TILT_LOCK_SECONDS := 3.0
 const MULTIBALL_COUNT := 3
 
 signal balls_in_play_changed(count: int)
+signal stage_changed(stage: StageData, index: int, total: int)
+
+var stages: Array[StageData] = []
+var stage_index := 0
+var _bg_sprite: Sprite2D
 
 var ball_scene: PackedScene = preload("res://scenes/components/Ball.tscn")
 var flipper_scene: PackedScene = preload("res://scenes/components/Flipper.tscn")
@@ -87,6 +92,7 @@ func _ready() -> void:
 	_build_components()
 	_build_enemies()
 	_build_boss()
+	_load_stages()
 	magic = MagicSystem.new()
 	magic.name = "Magic"
 	magic.table = self
@@ -106,10 +112,62 @@ func _build_layers() -> void:
 	fx_layer = Node2D.new(); fx_layer.name = "FX"; add_child(fx_layer)
 
 
+func _load_stages() -> void:
+	for i in range(1, 10):
+		var path := "res://data/stages/stage%d.tres" % i
+		if ResourceLoader.exists(path):
+			stages.append(load(path))
+	if stages.is_empty():
+		stages.append(StageData.new())
+
+
+func current_stage() -> StageData:
+	return stages[clampi(stage_index, 0, stages.size() - 1)]
+
+
+## Aplica arte, nomes e dificuldade da fase atual a todos os elementos.
+func apply_stage(index: int) -> void:
+	stage_index = clampi(index, 0, stages.size() - 1)
+	var st := current_stage()
+	var bg_tex := st.tex("background")
+	if bg_tex != null and _bg_sprite != null:
+		_bg_sprite.texture = bg_tex
+		_bg_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		_bg_sprite.scale = Vector2(W / bg_tex.get_width(), H / bg_tex.get_height())
+	for s in skeletons:
+		s.apply_skin(st.tex("enemy_static"), 84.0, st.enemy_hp_scale)
+		s.attack_interval_min = 6.0 * st.skeleton_attack_scale
+		s.attack_interval_max = 9.0 * st.skeleton_attack_scale
+	for b in bats:
+		b.apply_skin(st.tex("enemy_flyer"), 76.0, st.enemy_hp_scale)
+		b.move_speed = st.flyer_speed
+	guardian.apply_skin(st.tex("enemy_guardian"), 118.0, st.enemy_hp_scale)
+	guardian.shield.apply_skin(st.tex("guardian_shield"))
+	guardian.fire_interval = 6.5 * st.projectile_interval_scale
+	boss.apply_skin(st.tex("boss"), 250.0, st.boss_phase_hp, st.projectile_interval_scale)
+	stage_changed.emit(st, stage_index, stages.size())
+
+
+func advance_stage() -> void:
+	# Limpa a mesa (mantém pontuação e bolas restantes), aplica a próxima fase e serve.
+	var next := stage_index + 1
+	var balls_now := GameManager.balls_left
+	reset_table(false)
+	GameManager.balls_left = mini(balls_now + 1, 5)
+	GameManager.balls_changed.emit(GameManager.balls_left)
+	apply_stage(next)
+	AudioManager.play_music(current_stage().music, 1.0)
+	SignalBus.hud_message.emit("FASE %d: %s" % [stage_index + 1, current_stage().display_name.to_upper()], 3.0)
+	if GameManager.state != GameManager.State.SERVE:
+		GameManager.change_state(GameManager.State.SERVE)
+	serve_ball()
+
+
 func _build_background() -> void:
 	var bg := Sprite2D.new()
 	bg.name = "Background"
 	bg.centered = false
+	_bg_sprite = bg
 	if ResourceLoader.exists("res://assets/art/background_table.png"):
 		bg.texture = load("res://assets/art/background_table.png")
 	else:
@@ -137,6 +195,7 @@ func _build_walls() -> void:
 	lane_gate.from_point = Vector2(LANE_X, 400)
 	lane_gate.to_point = Vector2(W, 340)
 	static_layer.add_child(lane_gate)
+	G.make_post(static_layer, Vector2(LANE_X, 400), 7.0, "PostLaneTop")
 	# Divisórias inferiores (outlane / inlane / apron até o pivô do flipper).
 	# A rampa do apron termina tangente ao topo do pivô do flipper (mesmo ângulo de repouso, 28°),
 	# para a bola rolar da inlane direto para a pá sem degrau.
@@ -357,7 +416,7 @@ func _physics_process(delta: float) -> void:
 		if p.x < -30.0 or p.x > W + 30.0 or p.y < -80.0 or p.y > H + 200.0:
 			stats.out_of_bounds += 1
 			push_warning("GameTable: bola fora da mesa em %s (anomalia física)" % str(p))
-			_on_ball_drained(ball)
+			_on_ball_stuck_rescue(ball)  # devolve ao lançador sem punir o jogador
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -587,7 +646,7 @@ func _awaken_boss() -> void:
 	SignalBus.hud_message.emit(Loc.t("portal_open"), 3.0)
 	SignalBus.mission_portal_opened.emit()
 	SignalBus.request_flash.emit(Color(0.48, 0.17, 0.75), 0.6)
-	AudioManager.play_music("boss_loop", 1.5)
+	AudioManager.play_music(current_stage().boss_music, 1.5)
 
 
 func is_boss_active() -> bool:
@@ -608,7 +667,7 @@ func _on_boss_summon(count: int) -> void:
 
 func _on_boss_defeated() -> void:
 	boss_defeated_flag = true
-	GameManager.victory = true
+	GameManager.victory = stage_index >= stages.size() - 1
 	bonus_active = true
 	bonus_left = BONUS_SECONDS
 	ScoreManager.bonus_active = true
@@ -627,7 +686,11 @@ func _end_bonus_sequence() -> void:
 	jackpot_portal.set_active(false)
 	SignalBus.bonus_sequence_ended.emit()
 	AudioManager.play_sfx("victory", 0.0, 0.0)
-	GameManager.on_boss_defeated_and_bonus_finished()
+	if stage_index < stages.size() - 1:
+		ScoreManager.add_points_raw(10000)
+		advance_stage()
+	else:
+		GameManager.on_boss_defeated_and_bonus_finished()
 
 
 # ---------------------------------------------------------------------------------
@@ -690,7 +753,9 @@ func add_mana(amount: int) -> void:
 # ---------------------------------------------------------------------------------
 func _on_game_started(_seed: int) -> void:
 	reset_table()
-	AudioManager.play_music("ambient_loop", 1.0)
+	apply_stage(0)
+	AudioManager.play_music(current_stage().music, 1.0)
+	SignalBus.hud_message.emit("FASE 1: %s" % current_stage().display_name.to_upper(), 3.0)
 	serve_ball()
 
 
@@ -699,7 +764,7 @@ func _on_state_changed(_old: int, new_state: int) -> void:
 		pass  # GameManager chama serve_ball explicitamente
 
 
-func reset_table() -> void:
+func reset_table(full: bool = true) -> void:
 	for b in active_balls:
 		if is_instance_valid(b):
 			b.queue_free()
@@ -724,6 +789,8 @@ func reset_table() -> void:
 	bonus_left = 0.0
 	boss_defeated_flag = false
 	ScoreManager.bonus_active = false
+	if full:
+		stage_index = 0
 	for k in seals:
 		seals[k] = false
 	drop_bank.reset_bank()

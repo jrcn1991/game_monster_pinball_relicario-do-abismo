@@ -25,9 +25,12 @@ func _ready() -> void:
 	cs.shape = circle
 	add_child(cs)
 	_sprite = Sprite2D.new()
-	if ResourceLoader.exists(texture_path):
+	if ResourceLoader.exists("res://assets/art/props/rune.png"):
+		TableGeometry.fit_sprite(_sprite, load("res://assets/art/props/rune.png"), radius * 2.6)
+		_sprite.rotation = deg_to_rad(120.0 * float(hash(target_id) % 3))
+	elif ResourceLoader.exists(texture_path):
 		_sprite.texture = load(texture_path)
-	_sprite.scale = Vector2(radius * 2.4 / 40.0, radius * 2.4 / 40.0)
+		_sprite.scale = Vector2(radius * 2.4 / 40.0, radius * 2.4 / 40.0)
 	add_child(_sprite)
 	_update_visual()
 

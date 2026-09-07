@@ -24,6 +24,8 @@ func _ready() -> void:
 	circle.radius = radius
 	cs.shape = circle
 	_sprite = get_node_or_null("Sprite") as Sprite2D
+	if _sprite != null and ResourceLoader.exists("res://assets/art/props/bumper_bell.png"):
+		TableGeometry.fit_sprite(_sprite, load("res://assets/art/props/bumper_bell.png"), radius * 2.15)
 	if _sprite == null:
 		var poly := Polygon2D.new()
 		poly.polygon = TableGeometry.circle_points(Vector2.ZERO, radius, 28)

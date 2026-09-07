@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="StageData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/table/StageData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "stage2"
+display_name = "Claustro dos Ecos"
+subtitle = "Os sinos rachados chamam por sangue"
+boss_name = "Sineiro Enforcado"
+art_dir = "res://assets/art/stages/stage2"
+music = "ambient_loop"
+boss_music = "boss_loop"
+enemy_hp_scale = 1.35
+boss_phase_hp = 26
+projectile_interval_scale = 0.8
+flyer_speed = 175.0
+skeleton_attack_scale = 0.8

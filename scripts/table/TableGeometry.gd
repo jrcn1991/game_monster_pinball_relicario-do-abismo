@@ -94,6 +94,18 @@ static func circle_points(center: Vector2, radius: float, steps: int) -> PackedV
 	return pts
 
 
+## Aplica uma textura a um Sprite2D e escala para que o maior lado tenha target_px.
+static func fit_sprite(sprite: Sprite2D, texture: Texture2D, target_px: float) -> void:
+	if sprite == null or texture == null:
+		return
+	sprite.texture = texture
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	var m := maxf(float(texture.get_width()), float(texture.get_height()))
+	var s := target_px / maxf(m, 1.0)
+	sprite.scale = Vector2(s, s)
+	sprite.set_meta("base_scale", sprite.scale)
+
+
 static func concat(a: PackedVector2Array, b: PackedVector2Array) -> PackedVector2Array:
 	var out := PackedVector2Array(a)
 	for p in b:
