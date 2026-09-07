@@ -1,0 +1,10 @@
+.godot/
+exports/*
+!exports/.gitkeep
+*.import.tmp
+.import/
+*.log
+__pycache__/
+/tests/results/
+/screenshots/
+/Inspiração/

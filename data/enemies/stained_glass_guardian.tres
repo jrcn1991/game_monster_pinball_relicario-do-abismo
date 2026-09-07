@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Guardião do Vitral"
+max_hp = 8
+points_on_death = 4000
+points_on_hit = 200
+mana_on_hit = 3
+mana_on_death = 20
+respawn_seconds = 20.0
+invulnerability_ms = 100

@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/SkeletonSentry.gd" id="1"]
+[ext_resource type="Resource" path="res://data/enemies/skeleton_sentry.tres" id="2"]
+
+[node name="SkeletonSentry" type="StaticBody2D"]
+collision_layer = 16
+collision_mask = 0
+script = ExtResource("1")
+data = ExtResource("2")
+enemy_id = "skeleton"
+body_radius = 18.0
+texture_path = "res://assets/art/skeleton_sentry.png"

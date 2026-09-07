@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ScoringData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/ScoringData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+bumper = 250
+slingshot = 150
+drop_target = 500
+drop_bank_bonus = 3000
+rollover = 300
+lanes_bonus = 5000
+rune = 400
+lock = 1000
+boss_phase = 25000
+jackpot = 50000

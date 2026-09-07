@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Esqueleto-sentinela"
+max_hp = 3
+points_on_death = 1000
+points_on_hit = 100
+mana_on_hit = 2
+mana_on_death = 5
+respawn_seconds = 12.0
+invulnerability_ms = 100

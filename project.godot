@@ -1,0 +1,85 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Relicário do Abismo"
+config/description="Pinball de ação gótico: a bola é a arma. Protótipo MVP."
+config/version="0.1.0"
+run/main_scene="res://scenes/main/Main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+run/max_fps=0
+boot_splash/bg_color=Color(0.0353, 0.0392, 0.0706, 1)
+boot_splash/show_image=false
+config/icon="res://assets/art/icon.png"
+run/flush_stdout_on_print=true
+
+[audio]
+
+buses/default_bus_layout="res://assets/audio/default_bus_layout.tres"
+
+[autoload]
+
+SignalBus="*res://scripts/autoload/SignalBus.gd"
+Loc="*res://scripts/autoload/Loc.gd"
+SaveManager="*res://scripts/autoload/SaveManager.gd"
+AudioManager="*res://scripts/autoload/AudioManager.gd"
+ScoreManager="*res://scripts/autoload/ScoreManager.gd"
+GameManager="*res://scripts/autoload/GameManager.gd"
+
+[debug]
+
+gdscript/warnings/untyped_declaration=0
+gdscript/warnings/unsafe_property_access=0
+gdscript/warnings/unsafe_method_access=0
+gdscript/warnings/unused_parameter=0
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/window_width_override=1600
+window/size/window_height_override=900
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+window/vsync/vsync_mode=1
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=false
+
+[layer_names]
+
+2d_physics/layer_1="walls"
+2d_physics/layer_2="ball"
+2d_physics/layer_3="flippers"
+2d_physics/layer_4="targets"
+2d_physics/layer_5="enemies"
+2d_physics/layer_6="projectiles"
+2d_physics/layer_7="sensors"
+2d_physics/layer_8="pickups"
+
+[physics]
+
+common/physics_ticks_per_second=120
+common/max_physics_steps_per_frame=8
+2d/default_gravity=1300.0
+2d/solver/solver_iterations=16
+2d/solver/contact_recycle_radius=2.0
+2d/solver/contact_max_separation=1.0
+2d/solver/contact_max_allowed_penetration=0.2
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/canvas_textures/default_texture_filter=0
+environment/defaults/default_clear_color=Color(0.0353, 0.0392, 0.0706, 1)
+2d/snap/snap_2d_transforms_to_pixel=false

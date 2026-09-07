@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/EnemyData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Morcego de Cinzas"
+max_hp = 2
+points_on_death = 1500
+points_on_hit = 150
+mana_on_hit = 2
+mana_on_death = 0
+respawn_seconds = 15.0
+invulnerability_ms = 100
