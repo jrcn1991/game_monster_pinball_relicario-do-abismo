@@ -5,6 +5,7 @@ extends Node2D
 signal completed()
 
 @export var completion_points: int = 5000
+@export var message_key: String = "lanes_complete"
 
 var rollovers: Array[Rollover] = []
 var completions := 0
@@ -24,7 +25,7 @@ func _on_rolled(_r: Rollover) -> void:
 	completions += 1
 	ScoreManager.add_points_raw(completion_points)
 	AudioManager.play_sfx("ball_save", 0.0, 0.0)
-	SignalBus.hud_message.emit(Loc.t("lanes_complete"), 2.0)
+	SignalBus.hud_message.emit(Loc.t(message_key), 2.0)
 	for r in rollovers:
 		r.set_lit(false)
 	completed.emit()

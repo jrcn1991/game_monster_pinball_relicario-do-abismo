@@ -39,6 +39,13 @@ Três mesas com a mesma geometria e arte, inimigos, chefe e dificuldade próprio
 **Claustro dos Ecos** (Sineiro Enforcado) e **Olho do Abismo** (O Relicário). Derrotar o chefe e cumprir a sequência bônus
 avança de fase com +1 bola; vencer a terceira encerra a partida com vitória. Dados em `data/stages/*.tres`.
 
+## Caminhos da mesa
+
+Órbitas esquerda e direita com spinners, três lanes no topo da arena (completar = multiplicador +1), rampa elevada
+(entrada à esquerda, passa por cima da arena e desce na inlane direita), banco de alvos, runas, trava de bolas,
+bumpers, slingshots, lanes E-L-O-S e a arena do chefe. Inimigos: esqueleto-sentinela, morcego de cinzas, guardião do
+vitral e torre de runas, com variantes próprias em cada fase.
+
 ## Objetivo
 
 1. Quebre os **três Selos do Abismo**: derrube o banco de alvos, derrote o Guardião do Vitral e acenda as três runas.

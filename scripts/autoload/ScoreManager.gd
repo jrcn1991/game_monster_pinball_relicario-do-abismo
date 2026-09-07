@@ -74,6 +74,11 @@ func compute_points(base_points: int) -> int:
 	return p
 
 
+func add_multiplier(amount: int = 1) -> void:
+	multiplier = clampi(multiplier + amount, 1, MAX_MULTIPLIER)
+	multiplier_changed.emit(multiplier)
+
+
 ## Pontos diretos (sem interação com combo), já multiplicados pelo multiplicador atual.
 func add_points_raw(base_points: int) -> int:
 	var p := base_points * multiplier

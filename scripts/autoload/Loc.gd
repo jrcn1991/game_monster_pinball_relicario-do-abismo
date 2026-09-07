@@ -70,6 +70,9 @@ var _strings := {
 		"seed": "Seed",
 		"debug_hint": "F3: debug",
 		"summon": "ESQUELETOS INVOCADOS",
+		"top_lanes": "LANES DO TOPO: MULTIPLICADOR +1",
+		"ramp": "RAMPA!",
+		"orbit": "ÓRBITA",
 		"eye_open": "O OLHO SE ABRE",
 	}
 }

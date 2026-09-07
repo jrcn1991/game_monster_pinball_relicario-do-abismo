@@ -18,6 +18,9 @@ const FLIPPER_ASSIST := 0.95
 
 var consecrated := false
 var in_plunger_lane := true
+var on_ramp := false
+var ramp: Node = null
+const GROUND_MASK := 29  # paredes, flippers, alvos, inimigos
 var prev_velocity := Vector2.ZERO
 var impact_speed_last := 0.0
 var _hit_cooldowns: Dictionary = {}  # instance_id -> msec do clock físico
@@ -151,6 +154,27 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	prev_velocity = v
 
 
+func enter_ramp(r: Node) -> void:
+	on_ramp = true
+	ramp = r
+	collision_mask = Ramp.RAMP_LAYER
+	gravity_scale = 0.55
+	z_index = 30
+	if _trail:
+		_trail.z_index = 29
+	_hit_cooldowns.clear()
+
+
+func exit_ramp() -> void:
+	on_ramp = false
+	ramp = null
+	collision_mask = GROUND_MASK
+	gravity_scale = 1.0
+	z_index = 0
+	if _trail:
+		_trail.z_index = -1
+
+
 func set_consecrated(value: bool) -> void:
 	consecrated = value
 	_update_colors()
@@ -171,6 +195,8 @@ func _update_colors() -> void:
 ## Usado ao servir/reposicionar (coordenadas LOCAIS da mesa): zera o estado dinâmico.
 ## Não é usado durante o jogo normal, apenas em serviço, trava, resgate e testes.
 func reset_motion(new_local_position: Vector2) -> void:
+	if on_ramp:
+		exit_ramp()
 	position = new_local_position
 	linear_velocity = Vector2.ZERO
 	angular_velocity = 0.0

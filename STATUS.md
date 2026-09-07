@@ -31,6 +31,11 @@
 - Animações por quadros reais (`SpriteAnimator`, 36 quadros gerados: idle x3, ataque, dano, morte; ciclo de asas): nada de deformar o mesmo PNG.
 - Bola, flipper, sinos, runas, alvos, trava e portal com arte gerada; rastro e faíscas na bola; traço duplo nas paredes.
 
+## Atualização 2026-09-07 (mesa v2)
+- Órbitas laterais com guias e spinners; três lanes no topo (I, II, III) com multiplicador; rampa elevada real (camada de colisão própria, bola desenhada por cima, tiro fraco rola de volta, segurança contra saída do canal); banco de alvos à esquerda; torre de runas (inimigo novo, telegrafa e atira); quadros extras de idle para chefes e guardiões.
+- Formas convexas construídas com casco convexo (ordem de vértices consistente); rampa suavizada com Curve2D.
+- Suíte: 129 verificações (rampa, spinner, lanes do topo, torre), 40 lançamentos sem bola presa nem fora da mesa.
+
 ## Verificação visual
 - `godot --path . -- --autoplay --screenshots=DIR` gera 8 capturas jogando sozinho; conferidas manualmente: HUD, mesa, inimigos, chefe, mensagens e flippers renderizam na RTX 3060 (OpenGL Compatibility).
 

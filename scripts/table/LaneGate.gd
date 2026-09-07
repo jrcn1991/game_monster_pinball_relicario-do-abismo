@@ -16,9 +16,7 @@ func _ready() -> void:
 	_shape = CollisionShape2D.new()
 	var d := (to_point - from_point).normalized()
 	var n := Vector2(d.y, -d.x) * 5.0
-	var poly := ConvexPolygonShape2D.new()
-	poly.points = PackedVector2Array([from_point + n, to_point + n, to_point - n, from_point - n])
-	_shape.shape = poly
+	_shape.shape = TableGeometry.convex(PackedVector2Array([from_point + n, to_point + n, to_point - n, from_point - n]))
 	add_child(_shape)
 	_line = Line2D.new()
 	_line.points = PackedVector2Array([from_point, to_point])

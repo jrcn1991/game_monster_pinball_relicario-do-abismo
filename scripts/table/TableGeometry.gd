@@ -28,6 +28,16 @@ static func metal_material() -> PhysicsMaterial:
 
 const WALL_THICKNESS := 18.0
 
+
+## Quadrilátero/polígono convexo com ordem de vértices consistente (evita normais invertidas).
+static func convex(points: PackedVector2Array) -> ConvexPolygonShape2D:
+	var hull := Geometry2D.convex_hull(points)
+	if hull.size() > 1 and hull[0] == hull[hull.size() - 1]:
+		hull.remove_at(hull.size() - 1)
+	var shape := ConvexPolygonShape2D.new()
+	shape.points = hull
+	return shape
+
 ## Cria uma parede (StaticBody2D) a partir de uma polilinha aberta.
 ## Cada trecho é um retângulo COM ESPESSURA (não um segmento sem espessura): a bola precisaria
 ## penetrar espessura + raio em um único tick para atravessar, o que elimina o tunneling.
@@ -56,9 +66,7 @@ static func make_wall(parent: Node, points: PackedVector2Array, wall_name: Strin
 		var a2 := a - d * 1.0
 		var b2 := b + d * 1.0
 		var cs := CollisionShape2D.new()
-		var poly := ConvexPolygonShape2D.new()
-		poly.points = PackedVector2Array([a2 + n * t0, b2 + n * t0, b2 + n * t1, a2 + n * t1])
-		cs.shape = poly
+		cs.shape = convex(PackedVector2Array([a2 + n * t0, b2 + n * t0, b2 + n * t1, a2 + n * t1]))
 		body.add_child(cs)
 	# Traço estilizado: sombra escura larga + corpo de bronze + brilho fino.
 	var shadow := Line2D.new()

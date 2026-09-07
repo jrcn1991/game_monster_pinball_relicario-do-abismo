@@ -51,6 +51,11 @@ var lock_saucer: LockSaucer
 var jackpot_portal: JackpotPortal
 var drop_bank: DropTargetBank
 var lane_group: LaneGroup
+var top_lanes: LaneGroup
+var spinners: Array[Spinner] = []
+var ramp: Ramp
+var turrets: Array[RuneTurret] = []
+var turret_scene: PackedScene = preload("res://scenes/enemies/RuneTurret.tscn")
 var runes: Array[RuneTarget] = []
 var skeletons: Array[SkeletonSentry] = []
 var bats: Array[AshBat] = []
@@ -144,6 +149,10 @@ func apply_stage(index: int) -> void:
 		b.set_flap_frames(st.tex("enemy_flyer"), st.tex("enemy_flyer_up"))
 		b.apply_frames(st.art_dir, "enemy_flyer", 76.0)
 		b.move_speed = st.flyer_speed
+	for t in turrets:
+		t.apply_skin(st.tex("enemy_turret"), 88.0, st.enemy_hp_scale)
+		t.apply_frames(st.art_dir, "enemy_turret", 88.0)
+		t.fire_interval = 5.5 * st.projectile_interval_scale
 	guardian.apply_skin(st.tex("enemy_guardian"), 118.0, st.enemy_hp_scale)
 	guardian.apply_frames(st.art_dir, "enemy_guardian", 118.0)
 	guardian.shield.apply_skin(st.tex("guardian_shield"))
@@ -224,6 +233,17 @@ func _build_walls() -> void:
 	G.make_post(static_layer, inner_right[inner_right.size() - 1], 7.0, "PostArcR", Color(0.78, 0.49, 1.0))
 	G.make_post(static_layer, inner_left[inner_left.size() - 1], 7.0, "PostArcTL", Color(0.78, 0.49, 1.0))
 	G.make_post(static_layer, inner_right[0], 7.0, "PostArcTR", Color(0.78, 0.49, 1.0))
+	# Guias das órbitas laterais (a bola sobe pela lane, contorna o topo e desce do outro lado).
+	G.make_wall(static_layer, PackedVector2Array([Vector2(92, 322), Vector2(92, 540)]), "OrbitGuideL", 6.0, Color(0.48, 0.17, 0.75), null, 0, 10.0)
+	G.make_wall(static_layer, PackedVector2Array([Vector2(668, 400), Vector2(668, 540)]), "OrbitGuideR", 6.0, Color(0.48, 0.17, 0.75), null, 0, 10.0)
+	G.make_post(static_layer, Vector2(92, 540), 7.0, "PostOrbitL", Color(0.78, 0.49, 1.0))
+	G.make_post(static_layer, Vector2(668, 540), 7.0, "PostOrbitR", Color(0.78, 0.49, 1.0))
+	G.make_post(static_layer, Vector2(668, 400), 7.0, "PostOrbitRT", Color(0.78, 0.49, 1.0))
+	# Divisórias das três lanes do topo (entre o corredor superior e a arena).
+	G.make_wall(static_layer, PackedVector2Array([Vector2(372, 40), Vector2(372, 116)]), "TopLaneDivA", 5.0, Color(0.84, 0.66, 0.37), null, 0, 8.0)
+	G.make_wall(static_layer, PackedVector2Array([Vector2(448, 40), Vector2(448, 116)]), "TopLaneDivB", 5.0, Color(0.84, 0.66, 0.37), null, 0, 8.0)
+	G.make_post(static_layer, Vector2(372, 116), 6.0, "PostTopA", Color(0.84, 0.66, 0.37))
+	G.make_post(static_layer, Vector2(448, 116), 6.0, "PostTopB", Color(0.84, 0.66, 0.37))
 	# Dreno.
 	drain = DrainArea.new()
 	drain.name = "Drain"
@@ -289,8 +309,8 @@ func _build_components() -> void:
 	# Banco de drop targets (direita, voltado para o flipper esquerdo).
 	drop_bank = DropTargetBank.new()
 	drop_bank.name = "DropBank"
-	drop_bank.position = Vector2(612, 372)
-	drop_bank.rotation = deg_to_rad(45.0)
+	drop_bank.position = Vector2(150, 472)
+	drop_bank.rotation = deg_to_rad(-45.0)
 	for i in 3:
 		var dt: DropTarget = drop_target_scene.instantiate()
 		dt.name = "Drop%d" % i
@@ -311,6 +331,36 @@ func _build_components() -> void:
 		lane_group.add_child(r)
 	lane_group.completed.connect(_on_lanes_completed)
 	components_layer.add_child(lane_group)
+	# Lanes do topo (I, II, III): completar sobe o multiplicador.
+	top_lanes = LaneGroup.new()
+	top_lanes.name = "TopLanes"
+	top_lanes.completion_points = 3000
+	top_lanes.message_key = "top_lanes"
+	for d in [["I", Vector2(336, 96)], ["II", Vector2(410, 96)], ["III", Vector2(484, 96)]]:
+		var r := Rollover.new()
+		r.name = "Top" + d[0]
+		r.letter = d[0]
+		r.size = Vector2(40.0, 22.0)
+		r.position = d[1]
+		top_lanes.add_child(r)
+	top_lanes.completed.connect(_on_top_lanes_completed)
+	components_layer.add_child(top_lanes)
+	# Spinners nas entradas das órbitas.
+	for d in [["spinner_l", Vector2(46, 470)], ["spinner_r", Vector2(714, 470)]]:
+		var sp := Spinner.new()
+		sp.name = d[0]
+		sp.target_id = d[0]
+		sp.size = Vector2(60.0, 12.0)
+		sp.position = d[1]
+		components_layer.add_child(sp)
+		spinners.append(sp)
+	# Rampa elevada: sobe pela esquerda, contorna a arena e desce na inlane direita.
+	ramp = Ramp.new()
+	ramp.name = "RampLeft"
+	ramp.ramp_id = "ramp_left"
+	ramp.path = PackedVector2Array([Vector2(240, 640), Vector2(240, 420), Vector2(275, 330), Vector2(345, 285), Vector2(410, 275),
+		Vector2(475, 285), Vector2(545, 330), Vector2(585, 400), Vector2(600, 500), Vector2(600, 650), Vector2(630, 700), Vector2(660, 730)])
+	components_layer.add_child(ramp)
 	# Runas.
 	var rune_defs := [["rune_a", Vector2(78, 600)], ["rune_b", Vector2(682, 600)], ["rune_c", Vector2(190, 400)]]
 	for d in rune_defs:
@@ -336,7 +386,7 @@ func _build_components() -> void:
 
 
 func _build_enemies() -> void:
-	var sk_defs := [[Vector2(150, 650), Vector2(1, -0.5)], [Vector2(380, 700), Vector2(-1, -0.6)], [Vector2(610, 650), Vector2(-1, -0.5)]]
+	var sk_defs := [[Vector2(150, 650), Vector2(1, -0.5)], [Vector2(380, 700), Vector2(-1, -0.6)], [Vector2(560, 700), Vector2(-1, -0.5)]]
 	var idx := 0
 	for d in sk_defs:
 		var sk: SkeletonSentry = skeleton_scene.instantiate()
@@ -346,7 +396,7 @@ func _build_enemies() -> void:
 		enemies_layer.add_child(sk)
 		skeletons.append(sk)
 		idx += 1
-	var bat_defs := [[Vector2(140, 470), PackedVector2Array([Vector2(0, 0), Vector2(100, -70), Vector2(200, 0)])],
+	var bat_defs := [[Vector2(300, 420), PackedVector2Array([Vector2(0, 0), Vector2(80, -60), Vector2(160, 0)])],
 		[Vector2(620, 300), PackedVector2Array([Vector2(0, 0), Vector2(-80, -60), Vector2(-160, 0)])]]
 	idx = 0
 	for d in bat_defs:
@@ -358,6 +408,11 @@ func _build_enemies() -> void:
 		enemies_layer.add_child(bat)
 		bats.append(bat)
 		idx += 1
+	var tr: RuneTurret = turret_scene.instantiate()
+	tr.name = "Turret0"
+	tr.position = Vector2(500, 600)
+	enemies_layer.add_child(tr)
+	turrets.append(tr)
 	guardian = guardian_scene.instantiate()
 	guardian.name = "Guardian"
 	guardian.position = Vector2(380, 560)
@@ -558,6 +613,7 @@ func get_enemies() -> Array:
 	var out: Array = []
 	for s in skeletons: out.append(s)
 	for b in bats: out.append(b)
+	for t in turrets: out.append(t)
 	out.append(guardian)
 	out.append(boss)
 	for s in summoned:
@@ -607,6 +663,11 @@ func _on_lanes_completed() -> void:
 	ball_save_left = maxf(ball_save_left, BALL_SAVE_SECONDS)
 	ball_save_source = "lanes"
 	SignalBus.ball_save_changed.emit(true, ball_save_left)
+
+
+func _on_top_lanes_completed() -> void:
+	ScoreManager.add_multiplier(1)
+	SignalBus.request_flash.emit(Color(0.96, 0.83, 0.37), 0.3)
 
 
 func _on_drop_bank_completed() -> void:
@@ -816,7 +877,10 @@ func reset_table(full: bool = true) -> void:
 		s.force_reset()
 	for b in bats:
 		b.force_reset()
+	for t in turrets:
+		t.force_reset()
 	guardian.force_reset()
+	top_lanes.reset_lanes()
 	boss.reset_boss()
 	jackpot_portal.set_active(false)
 	lane_gate.set_closed(false)

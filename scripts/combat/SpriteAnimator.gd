@@ -104,7 +104,7 @@ static func load_frames(art_dir: String, base_name: String) -> Dictionary:
 		return out
 	var base: Texture2D = load(base_path)
 	out.idle.append(base)
-	for suffix in ["idle2", "idle3"]:
+	for suffix in ["idle2", "idle3", "idle4", "idle5", "idle6", "idle7", "idle8"]:
 		var p := art_dir.path_join("%s_%s.png" % [base_name, suffix])
 		if ResourceLoader.exists(p):
 			out.idle.append(load(p))
