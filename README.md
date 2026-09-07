@@ -5,6 +5,10 @@ Uma catedral demoníaca em três zonas, hordas de criaturas, magia, multiball e 
 
 > Protótipo MVP jogável. Arte e áudio são provisórios, gerados proceduralmente para este projeto (originais).
 
+## Jogar no navegador
+
+https://jrcn1991.github.io/relicario-do-abismo/ (build Web; em celular há controles de toque: metade esquerda/direita da tela = flippers, botões LANÇAR, MAGIA e PAUSA).
+
 ## Como jogar (Linux, esta máquina)
 
 ```bash
