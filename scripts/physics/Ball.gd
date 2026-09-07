@@ -20,7 +20,8 @@ var consecrated := false
 var in_plunger_lane := true
 var on_ramp := false
 var ramp: Node = null
-const GROUND_MASK := 29  # paredes, flippers, alvos, inimigos
+var is_captive := false  # bola cativa ("Sino"): nunca drena nem conta como bola ativa
+const GROUND_MASK := 31  # paredes, bolas, flippers, alvos, inimigos
 var prev_velocity := Vector2.ZERO
 var impact_speed_last := 0.0
 var _hit_cooldowns: Dictionary = {}  # instance_id -> msec do clock físico
@@ -78,7 +79,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_clock_msec += int(round(delta * 1000.0))
 	# Detecção de bola parada (fora da canaleta do lançador).
-	if not in_plunger_lane and GameManager.is_ball_in_play():
+	if not is_captive and not in_plunger_lane and GameManager.is_ball_in_play():
 		if linear_velocity.length() < STUCK_SPEED:
 			_stuck_timer += delta
 			if _stuck_timer >= STUCK_SECONDS:

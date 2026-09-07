@@ -11,6 +11,7 @@ const RAMP_LAYER := 1 << 8
 @export var points: int = 2500
 @export var color: Color = Color(0.78, 0.49, 1.0)
 
+signal completed()
 var completions := 0
 var _enter: Area2D
 var _exit: Area2D
@@ -195,6 +196,7 @@ func _on_exit(body: Node) -> void:
 			b.exit_ramp()
 			completions += 1
 			ScoreManager.register_hit(ramp_id, points, global_position)
+			completed.emit()
 			SignalBus.hud_message.emit(Loc.t("ramp"), 1.2)
 			AudioManager.play_sfx("ball_save", 0.1, -6.0)
 			SignalBus.impact.emit(_exit.global_position - global_position, 0.5)

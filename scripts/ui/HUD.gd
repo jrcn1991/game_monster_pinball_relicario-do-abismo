@@ -24,6 +24,23 @@ var record_label: Label
 var seed_label: Label
 var stage_label: Label
 var boss_name_label: Label
+var rosary_label: Label
+var loops_label: Label
+var indulgence_label: Label
+var prayer_label: Label
+var sacristy_label: Label
+var chapter_label: Label
+var chapter_desc: Label
+var relic_icons: Array[TextureRect] = []
+var hurry_label: Label
+var frenzy_label: Label
+var choice_panel: PanelContainer
+var choice_left_label: Label
+var choice_right_label: Label
+var choice_timer_label: Label
+var soul_box: VBoxContainer
+var soul_bar: ProgressBar
+var soul_label: Label
 var _message_left := 0.0
 var _messages: Array = []  # fila de [texto, segundos]
 
@@ -60,6 +77,33 @@ func _ready() -> void:
 	var t0 := GameManager.table
 	if t0 != null and t0.has_signal("stage_changed"):
 		t0.stage_changed.connect(_on_stage_changed)
+	if t0 != null and t0.get("systems") != null:
+		var sy = t0.systems
+		sy.bonus_changed.connect(func(spins, relics, bm): rosary_label.text = "ROSÁRIO: %d sopros · %d relíquias · bônus x%d" % [spins, relics, bm])
+		sy.loops_changed.connect(func(n): loops_label.text = "VOLTAS DO CLAUSTRO: %d" % n)
+		sy.indulgences_changed.connect(func(n): indulgence_label.text = "INDULGÊNCIAS: %d" % n)
+		sy.prayer_changed.connect(func(active, left, value): prayer_label.text = ("ORAÇÃO RELÂMPAGO %.0f s · %s" % [ceil(left), ScoreManager.format_short(value)]) if active else "")
+		sy.sacristy_changed.connect(func(n): sacristy_label.text = "SACRISTIA: " + "SACRIS".substr(0, n) + "------".substr(0, 6 - n))
+	if t0 != null and t0.get("chapters") != null:
+		var ch = t0.chapters
+		ch.chapter_changed.connect(func(_i, nm, txt, act): chapter_label.text = ("CAPÍTULO ATIVO: %s" if act else "CAPÍTULO: %s") % nm.to_upper(); chapter_desc.text = txt)
+		ch.relics_changed.connect(func(mask, _n):
+			for i in relic_icons.size():
+				relic_icons[i].modulate = Color.WHITE if mask & (1 << i) else Color(0.35, 0.35, 0.4, 0.6)
+		)
+		ch.hurryup_changed.connect(func(act, val, left): hurry_label.text = ("FOGO-FÁTUO %s · %.0f s" % [ScoreManager.format_short(val), ceil(left)]) if act else "")
+		ch.frenzy_changed.connect(func(act, jp): frenzy_label.text = ("FRENESI: %s por acerto" % ScoreManager.format_short(jp)) if act else "")
+		ch.choice_changed.connect(_on_choice)
+	if t0 != null and t0.get("exorcism") != null:
+		t0.exorcism.state_changed.connect(func(phase, kills, soul):
+			soul_box.visible = phase == 1 or phase == 2
+			if phase == 1:
+				soul_label.text = "EXORCISMO — FASE 1: POSSESSOS %d/7" % kills
+				soul_bar.value = 100.0 * kills / 7.0
+			elif phase == 2:
+				soul_label.text = "EXORCISMO — FASE 2: PUXE A ALMA"
+				soul_bar.value = soul
+		)
 	_on_score(0)
 	_on_balls(GameManager.balls_left)
 	_on_mult(1)
@@ -180,6 +224,54 @@ func _build_right_panel() -> void:
 	save_label = UITheme.make_label("", 18, UITheme.GOLD)
 	v.add_child(save_label)
 	v.add_child(HSeparator.new())
+	chapter_label = UITheme.make_label("CAPÍTULO: —", 20, UITheme.BRONZE_LIGHT)
+	v.add_child(chapter_label)
+	chapter_desc = UITheme.make_label("", 15, UITheme.IVORY)
+	chapter_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	v.add_child(chapter_desc)
+	var relic_row := HBoxContainer.new()
+	relic_row.add_theme_constant_override("separation", 6)
+	v.add_child(relic_row)
+	for i in 7:
+		var tr := TextureRect.new()
+		var pth := "res://assets/art/props/relic_%d.png" % (i + 1)
+		if ResourceLoader.exists(pth):
+			tr.texture = load(pth)
+		tr.custom_minimum_size = Vector2(40, 40)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.modulate = Color(0.35, 0.35, 0.4, 0.6)
+		relic_row.add_child(tr)
+		relic_icons.append(tr)
+	hurry_label = UITheme.make_label("", 18, UITheme.DANGER)
+	v.add_child(hurry_label)
+	soul_box = VBoxContainer.new()
+	soul_box.visible = false
+	v.add_child(soul_box)
+	soul_label = UITheme.make_label("EXORCISMO FINAL", 20, UITheme.GOLD)
+	soul_box.add_child(soul_label)
+	soul_bar = ProgressBar.new()
+	soul_bar.max_value = 100
+	soul_bar.value = 50
+	soul_bar.show_percentage = false
+	soul_bar.custom_minimum_size = Vector2(0, 22)
+	soul_bar.add_theme_stylebox_override("fill", UITheme.bar_style(UITheme.GOLD))
+	soul_bar.add_theme_stylebox_override("background", UITheme.bar_style(UITheme.DANGER))
+	soul_box.add_child(soul_bar)
+	frenzy_label = UITheme.make_label("", 18, UITheme.DANGER)
+	v.add_child(frenzy_label)
+	v.add_child(HSeparator.new())
+	rosary_label = UITheme.make_label("ROSÁRIO: 0 sopros · bônus x1", 16, UITheme.IVORY)
+	v.add_child(rosary_label)
+	loops_label = UITheme.make_label("VOLTAS: 0", 16, UITheme.IVORY)
+	v.add_child(loops_label)
+	sacristy_label = UITheme.make_label("SACRISTIA: ------", 16, UITheme.IVORY)
+	v.add_child(sacristy_label)
+	indulgence_label = UITheme.make_label("INDULGÊNCIAS: 0", 16, UITheme.GOLD)
+	v.add_child(indulgence_label)
+	prayer_label = UITheme.make_label("", 18, UITheme.GOLD)
+	v.add_child(prayer_label)
+	v.add_child(HSeparator.new())
 	boss_box = VBoxContainer.new()
 	boss_box.visible = false
 	v.add_child(boss_box)
@@ -196,12 +288,39 @@ func _build_right_panel() -> void:
 	boss_phase_label = UITheme.make_label(Loc.t("boss_phase") % 1, 18)
 	boss_box.add_child(boss_phase_label)
 	v.add_child(HSeparator.new())
-	var ctrl := UITheme.make_label(Loc.t("controls_body"), 13, Color(0.91, 0.87, 0.78, 0.55))
-	ctrl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	v.add_child(ctrl)
+	v.add_child(UITheme.make_label("ESC pausa · F3 debug · controles no menu", 13, Color(0.91, 0.87, 0.78, 0.5)))
+
+
+func _on_choice(active: bool, left_text: String, right_text: String, seconds_left: float) -> void:
+	choice_panel.visible = active
+	if active:
+		choice_left_label.text = "◀ FLIPPER ESQ.\n" + left_text
+		choice_right_label.text = "FLIPPER DIR. ▶\n" + right_text
+		choice_timer_label.text = "%.0f" % ceil(seconds_left)
 
 
 func _build_center() -> void:
+	choice_panel = PanelContainer.new()
+	choice_panel.add_theme_stylebox_override("panel", UITheme.panel_style(Color(0.0353, 0.0392, 0.0706, 0.95), UITheme.GOLD, 3))
+	choice_panel.position = Vector2(640, 420)
+	choice_panel.size = Vector2(640, 200)
+	choice_panel.visible = false
+	choice_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(choice_panel)
+	var cv := VBoxContainer.new()
+	choice_panel.add_child(cv)
+	cv.add_child(UITheme.make_label("INDULGÊNCIA — ESCOLHA", 26, UITheme.GOLD, HORIZONTAL_ALIGNMENT_CENTER))
+	var ch := HBoxContainer.new()
+	ch.add_theme_constant_override("separation", 40)
+	cv.add_child(ch)
+	choice_left_label = UITheme.make_label("", 20, UITheme.IVORY, HORIZONTAL_ALIGNMENT_CENTER)
+	choice_left_label.custom_minimum_size = Vector2(280, 0)
+	ch.add_child(choice_left_label)
+	choice_right_label = UITheme.make_label("", 20, UITheme.IVORY, HORIZONTAL_ALIGNMENT_CENTER)
+	choice_right_label.custom_minimum_size = Vector2(280, 0)
+	ch.add_child(choice_right_label)
+	choice_timer_label = UITheme.make_label("8", 22, UITheme.DANGER, HORIZONTAL_ALIGNMENT_CENTER)
+	cv.add_child(choice_timer_label)
 	message_label = UITheme.make_label("", 40, UITheme.GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	message_label.position = Vector2(550, 60)
 	message_label.size = Vector2(820, 60)

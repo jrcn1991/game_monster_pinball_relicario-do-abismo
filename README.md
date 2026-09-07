@@ -46,6 +46,23 @@ avança de fase com +1 bola; vencer a terceira encerra a partida com vitória. D
 bumpers, slingshots, lanes E-L-O-S e a arena do chefe. Inimigos: esqueleto-sentinela, morcego de cinzas, guardião do
 vitral e torre de runas, com variantes próprias em cada fase.
 
+## Regras profundas (mesa v3)
+
+Inspirada na estrutura de regras das grandes mesas clássicas (ver `docs/REFERENCE_TOTAN_MECHANICS.md`), com nomes e layout próprios:
+
+- **7 Capítulos** (modos): Gárgulas, Litania, Sepulcros, Sussurro, Procissão, Ascensão, Behemoth. Troque o capítulo com A/← enquanto a bola está no lançador; inicie acertando o corpo do Guardião. O progresso persiste entre bolas. Concluir acende a rampa para coletar a **Relíquia** (7 no total; 4 relíquias = bola extra).
+- **5 Vitrais** (os tiros de modo): banco de alvos esquerdo, órbita esquerda, rampa, órbita direita, banco de alvos direito.
+- **Sacristia** (scoop): soletra S-A-C-R-I-S (3, 2, 1 letras por visita) e dá um prêmio aleatório; com **Indulgência** acesa, segura a bola e oferece uma escolha: flipper esquerdo = relíquia do capítulo atual, direito = prêmio contextual (3× Fogo-Fátuo, 3× Oração, Oração Relâmpago, +3 voltas, coletar bônus).
+- **Turíbulo**: disco giratório central; cada meia-volta é um "sopro" que persiste a partida inteira; aos 15/30/60/90 sopros começa a **Oração Relâmpago** (10 s, cada sopro paga e reinicia o timer) e concede uma Indulgência.
+- **Sinos** (bolas cativas): acerto forte = +1 no multiplicador de bônus (até 12×) e acende o **Fogo-Fátuo** (hurry-up de 20 s iniciado na rampa e coletado no Guardião; o custo sobe a cada uso).
+- **Voltas do Claustro**: inlane acende a órbita oposta; loops encadeados; 6 e 20 loops = bola extra.
+- **Frenesi das Catacumbas**: 5 órbitas esquerdas iniciam um multiball de 2 bolas em que todo acerto paga um jackpot que cresce com os sinos (bumpers).
+- **Multiball do Abismo**: jackpot no Guardião cresce com os sopros, reacende na órbita sorteada; se acabar sem jackpot, a Sacristia dá **Revanche** por 8 s.
+- **Guardiões das outlanes**: completar um banco de alvos ergue o poste daquele lado, que devolve a bola uma vez.
+- **Skill shot**: lançar na lane do topo acesa (I, II ou III).
+- **Rosário**: bônus de fim de bola = (1k × sopros + 5k × relíquias) × multiplicador de bônus.
+- **Exorcismo Final** (com as 7 relíquias, no Guardião): fase 1 com 1 bola elimina 7 Possessos que ressuscitam até 3 em campo; fase 2 com bolas ilimitadas (até 4) em que cada Vitral puxa a Alma para você enquanto o Abismo puxa de volta (bola parada no lançador acelera o Abismo). Vitória = 300.000; derrota zera as relíquias.
+
 ## Objetivo
 
 1. Quebre os **três Selos do Abismo**: derrube o banco de alvos, derrote o Guardião do Vitral e acenda as três runas.

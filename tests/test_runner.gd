@@ -97,6 +97,8 @@ func _run_all() -> void:
 	await _test_boss()
 	await _test_pause_restart()
 	await _test_table_v2()
+	await _test_chapters()
+	await _test_exorcism()
 	await _test_save()
 	_finish()
 
@@ -273,7 +275,7 @@ func _test_launches() -> void:
 				press_right_frames = 32
 			_table.flipper_left.set_pressed(press_left_frames > 20)
 			_table.flipper_right.set_pressed(press_right_frames > 20)
-			if frames % 240 == 0 and v < 5.0 and not ball.in_plunger_lane:
+			if frames % 240 == 0 and v < 5.0 and not ball.in_plunger_lane and not ball.freeze:
 				stuck_events += 1
 				var key := "(%d,%d)" % [int(round(p.x / 20.0) * 20), int(round(p.y / 20.0) * 20)]
 				stuck_spots[key] = int(stuck_spots.get(key, 0)) + 1
@@ -302,6 +304,10 @@ func _test_launches() -> void:
 	_check(lane_fail == 0, "lançamentos médios/máximos sempre saem da canaleta")
 	_check(stuck_events <= maxi(1, _launch_count / 10), "bola nunca fica presa na geometria (amostras paradas: %d)" % stuck_events)
 	_log("  drenos no ciclo: %d (a IA pode manter a bola viva o tempo todo; o ciclo de dreno é coberto pelos testes de multiball)" % drains)
+	if _table.active_balls.size() > 1:
+		for b in _table.active_balls:
+			if is_instance_valid(b):
+				_log("  [diag] bola ativa %d em %s lane=%s freeze=%s scoop=%s" % [b.id_label, str(b.position), str(b.in_plunger_lane), str(b.freeze), str(_table.scoop.held_ball == b)])
 	_check(_table.active_balls.size() <= 1, "sem bolas duplicadas ao final (%d)" % _table.active_balls.size())
 
 
@@ -434,8 +440,9 @@ func _test_combat() -> void:
 	_table._on_rune_hit(_table.runes[0])
 	_check(not g.shield.active, "runa desativa o escudo por 5 s")
 	await _seconds(0.15)
+	ScoreManager.break_combo()
 	g.on_ball_hit(ball, 500.0, g.position, Vector2.UP)
-	_check(g.health.hp == ghp - 2, "guardião sem escudo recebe dano cheio")
+	_check(g.health.hp == ghp - 2, "guardião sem escudo recebe dano cheio (combo=%d, hp %d->%d)" % [ScoreManager.combo, ghp, g.health.hp])
 	# Magia.
 	_table.magic.mana = 0
 	_table.add_mana(100)
@@ -501,8 +508,9 @@ func _test_boss() -> void:
 	boss.on_weakpoint_hit(inactive, ball, 1500.0, boss.position)
 	_check(boss.health.hp == hp, "ponto fraco inativo não causa dano")
 	await _seconds(0.15)
+	ScoreManager.break_combo()
 	boss.on_weakpoint_hit(boss.active_weak, ball, 1500.0, boss.position)
-	_check(boss.health.hp == hp - 3, "ponto fraco ativo causa dano crítico (3)")
+	_check(boss.health.hp == hp - 3, "ponto fraco ativo causa dano crítico (3) (combo=%d, hp %d->%d)" % [ScoreManager.combo, hp, boss.health.hp])
 	# Leva à fase 2.
 	while boss.phase == FacelessBishop.Phase.PHASE1:
 		await _seconds(0.12)
@@ -668,6 +676,16 @@ func _test_table_v2() -> void:
 	_table.spinners[0]._on_body_entered(ball)
 	await _seconds(0.5)
 	_check(ScoreManager.score > sc and _table.spinners[0].spins >= 1, "spinner pontua e gira (%d voltas)" % _table.spinners[0].spins)
+	# Sacristia (scoop): captura, segura ~1,2 s e cospe a bola para longe.
+	if is_instance_valid(ball) and _table.active_balls.has(ball):
+		ball.freeze = false
+		ball.in_plunger_lane = false
+		ball.reset_motion(_table.scoop.position + Vector2(0, -60))
+		await _seconds(1.0)
+		_check(_table.scoop.is_holding(), "scoop captura a bola")
+		await _seconds(1.5)
+		var dist := ball.position.distance_to(_table.scoop.position) if is_instance_valid(ball) else 999.0
+		_check(not _table.scoop.is_holding() and dist > 60.0, "scoop solta a bola com chute (dist %.0f)" % dist)
 	# Torre: telegrafa e dispara.
 	var t: RuneTurret = _table.turrets[0]
 	if not is_instance_valid(ball) or not _table.active_balls.has(ball):
@@ -684,6 +702,151 @@ func _test_table_v2() -> void:
 	var thp: int = t.health.hp
 	t.on_ball_hit(ball, 1500.0, t.position, Vector2.UP)
 	_check(t.health.hp < thp, "torre recebe dano da bola")
+
+
+func _test_chapters() -> void:
+	_section("Lote B: capítulos, relíquias, indulgência, Fogo-Fátuo, frenesi, jackpot")
+	GameManager.restart_game()
+	await _frames(2)
+	var ch: ChapterSystem = _table.chapters
+	var sy: TableSystems = _table.systems
+	_check(ch != null and ch.selected == 0 and ch.active == -1, "capítulo 1 selecionado, nenhum ativo")
+	ch.cycle_selection()
+	_check(ch.selected == 1, "flipper esquerdo troca o capítulo selecionado (%d)" % ch.selected)
+	ch.selected = 3  # Sussurro: qualquer vitral conclui
+	ch.on_guardian_body_hit()
+	_check(ch.active == 3, "acertar o Guardião inicia o capítulo selecionado")
+	ch.on_orbit(1)
+	_check(ch.completed[3] and ch.relic_lit and ch.active == -1, "Sussurro concluído com 1 vitral; rampa acesa para a relíquia")
+	var relics_before: int = ch.relics_total
+	ch.on_ramp_completed()
+	_check(ch.relics_total == relics_before + 1 and (ch.relic_mask & 1) != 0 and not ch.relic_lit, "rampa coleta a relíquia (%d/7)" % ch.relics_total)
+	_check(sy.relics == ch.relics_total, "Rosário registra a relíquia")
+	# Procissão: 5 tiros
+	ch.selected = 4
+	ch.on_guardian_body_hit()
+	for i in 5:
+		ch.on_bank_right_hit()
+	_check(ch.completed[4], "Procissão concluída com 5 acertos em vitrais")
+	# Progresso persiste entre bolas: Litania parcial
+	ch.on_ramp_completed()  # coleta relíquia da procissão
+	ch.selected = 1
+	ch.on_guardian_body_hit()
+	ch.on_bank_left_hit(); ch.on_bank_left_hit()
+	_table.plunger.launch(1.0)
+	await _seconds(0.8)
+	_table.ball_save_left = 0.0
+	for b in _table.active_balls.duplicate():
+		_table._on_ball_drained(b)
+	await _seconds(1.6)
+	_check(ch.active == 1 and ch.progress[1] == 2, "progresso do capítulo persiste após perder a bola (%d)" % ch.progress[1])
+	# Fogo-Fátuo: sino cativo acende, rampa inicia hurry-up, Guardião coleta
+	sy.captive_hits_lit = 1
+	ch.on_captive_hit()
+	_check(ch.fatuo_lit, "sino cativo acende o Fogo-Fátuo")
+	ch.on_ramp_completed()
+	_check(ch.hurryup_active and ch.hurryup_value >= 40000, "rampa inicia o hurry-up (%d)" % ch.hurryup_value)
+	var sc0 := ScoreManager.score
+	ch.on_guardian_body_hit_full()
+	_check(not ch.hurryup_active and ScoreManager.score > sc0 + 10000 and ch.fatuo_needed == 2, "Guardião coleta o Fogo-Fátuo e o custo sobe")
+	# Indulgência: escolha da esquerda concede relíquia
+	sy.grant_indulgence()
+	_table.plunger.launch(1.0)
+	await _seconds(0.8)
+	var ball: Ball = _table.active_balls[0]
+	var held := ch.on_scoop(_table.scoop)
+	_check(held and ch.choice_active, "Indulgência acende a escolha no scoop")
+	var rel := ch.relics_total
+	ch._resolve_choice(true)
+	_check(ch.relics_total == rel + 1 and sy.indulgences == 0 and not ch.choice_active, "escolha esquerda concede relíquia e consome a indulgência")
+	# Frenesi: 5 órbitas esquerdas -> 2 bolas, todo acerto paga jackpot
+	_park(ball)
+	for i in 5:
+		ch.on_orbit(0)
+	await _frames(3)
+	_check(ch.frenzy_active and _table.active_balls.size() >= 2, "5 órbitas esquerdas iniciam o Frenesi com 2 bolas")
+	var sc1 := ScoreManager.score
+	ScoreManager.register_hit("qualquer", 10)
+	_check(ScoreManager.score >= sc1 + ch.frenzy_jackpot, "no frenesi todo acerto paga o jackpot")
+	# Multiball do Abismo: jackpot no Guardião e reacender na órbita sorteada
+	ch._on_multiball_started(3)
+	_table.multiball_active = true
+	var sc2 := ScoreManager.score
+	ch.on_guardian_body_hit_full()
+	_check(ScoreManager.score > sc2 and not ch.abyss_jackpot_lit and ch.abyss_relight_side >= 0, "Guardião paga o jackpot e sorteia a órbita para reacender")
+	ch.on_orbit(ch.abyss_relight_side)
+	_check(ch.abyss_jackpot_lit, "órbita sorteada reacende o jackpot")
+	# Revanche: multiball acaba sem jackpot -> scoop dá bola de volta
+	ch.abyss_jackpots = 0
+	ch._on_multiball_ended()
+	_check(ch.revanche_lit, "multiball sem jackpot acende a Revanche na Sacristia")
+	var n_before := _table.active_balls.size()
+	ch.on_scoop(_table.scoop)
+	await _frames(3)
+	_check(_table.active_balls.size() == n_before + 1, "Revanche devolve uma bola")
+	# Bônus de fim de bola
+	sy.spins_total = 10
+	sy.bonus_mult = 2
+	var expected := (1000 * 10 + 5000 * sy.relics) * 2
+	_check(sy.compute_end_bonus() == expected, "bônus de fim de bola = (1k×sopros + 5k×relíquias) × multiplicador")
+	# Oração relâmpago pelos marcos do turíbulo
+	sy.spins_total = 14
+	sy.on_censer_spin(1)
+	_check(sy.prayer_active, "15 sopros iniciam a Oração Relâmpago")
+	sy.prayer_left = 0.01
+	await _seconds(0.1)
+	_check(not sy.prayer_active and sy.indulgences == 1, "fim da Oração concede 1 Indulgência")
+
+
+func _test_exorcism() -> void:
+	_section("Lote C: Exorcismo Final")
+	GameManager.restart_game()
+	await _frames(2)
+	_table.plunger.launch(1.0)
+	await _seconds(0.8)
+	var ball: Ball = _table.active_balls[0]
+	_park(ball)
+	var ch: ChapterSystem = _table.chapters
+	var ex: Exorcism = _table.exorcism
+	# Coleta as 7 relíquias rapidamente (Sussurro repetido via conclusão direta).
+	for i in 7:
+		ch.selected = ch._first_incomplete()
+		ch.on_guardian_body_hit()
+		if ch.active >= 0:
+			ch.completed[ch.active] = true
+			ch.active = -1
+			ch.relic_lit = true
+			ch.on_ramp_completed()
+	_check(ch.relics_total == 7 and ex.lit, "7 relíquias acendem o Exorcismo no Guardião")
+	ch.on_guardian_body_hit()
+	await _frames(3)
+	_check(ex.phase == 1 and ex.possessed.size() == 3, "fase 1 inicia com 3 possessos")
+	for i in 7:
+		ch._shot("orbit_left")
+		await _frames(2)
+	_check(ex.phase == 2 and _table.active_balls.size() >= 2, "7 eliminações -> fase 2 com bolas extras (%d bolas)" % _table.active_balls.size())
+	var lives := GameManager.balls_left
+	_table.ball_save_left = 0.0
+	for b in _table.active_balls.duplicate():
+		_table._on_ball_drained(b)
+	await _frames(4)
+	_check(GameManager.balls_left == lives and _table.plunger.has_ball(), "na fase 2 drenar não perde vida: bola volta ao lançador")
+	var soul0: float = ex.soul
+	await _seconds(1.0)
+	_check(ex.soul < soul0, "o Abismo puxa a alma com o tempo")
+	var sc := ScoreManager.score
+	while ex.phase == 2:
+		ch._shot("ramp")
+	_check(ex.phase == 0 and ex.wins == 1 and ScoreManager.score >= sc + Exorcism.WIN_POINTS, "vitrais puxam a alma até a vitória (+2M)")
+	# Derrota: relíquias zeram
+	ex.light(); ex.start()
+	await _frames(2)
+	for i in 7:
+		ch._shot("orbit_right")
+		await _frames(1)
+	ex.soul = 0.5
+	await _seconds(0.6)
+	_check(ex.phase == 0 and ex.losses == 1 and ch.relics_total == 0, "derrota no Exorcismo zera as relíquias")
 
 
 func _test_save() -> void:

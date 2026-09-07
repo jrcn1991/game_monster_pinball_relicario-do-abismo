@@ -36,6 +36,11 @@
 - Formas convexas construídas com casco convexo (ordem de vértices consistente); rampa suavizada com Curve2D.
 - Suíte: 129 verificações (rampa, spinner, lanes do topo, torre), 40 lançamentos sem bola presa nem fora da mesa.
 
+## Atualização 2026-09-07 (mesa v3: regras profundas)
+- Elementos novos: Sacristia (scoop), Turíbulo (disco giratório), 2 Sinos (bolas cativas em canais), banco de stand-ups à direita, postes-guardiões nas outlanes, sensores de órbita, relíquias na HUD.
+- Regras novas: `TableSystems` (Rosário, multiplicador de bônus, Voltas do Claustro com bolas extras, skill shot, Oração Relâmpago/Indulgências, Sacristia com letras e prêmios) · `ChapterSystem` (7 capítulos persistentes, relíquias, Indulgência com escolha, Fogo-Fátuo, Frenesi de 2 bolas, jackpot crescente/reacender/Revanche) · `Exorcism` (modo final em 2 fases, bolas ilimitadas).
+- Suíte: 160 verificações (lotes A, B e C cobertos por testes de regras), zero bolas presas/fora da mesa em 10 lançamentos com a mesa v3.
+
 ## Verificação visual
 - `godot --path . -- --autoplay --screenshots=DIR` gera 8 capturas jogando sozinho; conferidas manualmente: HUD, mesa, inimigos, chefe, mensagens e flippers renderizam na RTX 3060 (OpenGL Compatibility).
 

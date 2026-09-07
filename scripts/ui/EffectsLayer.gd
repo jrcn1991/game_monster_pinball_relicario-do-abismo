@@ -49,7 +49,7 @@ func _process(delta: float) -> void:
 	if _flash_left > 0.0:
 		_flash_left -= delta
 		var a := clampf(_flash_left / maxf(_flash_time, 0.01), 0.0, 1.0)
-		_flash_rect.color.a = a * (0.12 if SaveManager.reduce_flash else 0.35)
+		_flash_rect.color.a = a * (0.08 if SaveManager.reduce_flash else 0.22)
 	elif _flash_rect.color.a > 0.0:
 		_flash_rect.color.a = 0.0
 	if _shake > 0.0 and _table != null:

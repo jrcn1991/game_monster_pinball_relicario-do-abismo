@@ -7,6 +7,7 @@ extends EnemyBase
 @export var shield_down_seconds: float = 5.0
 @export var fire_interval: float = 6.5
 
+signal body_hit()
 var shield: GuardianShield
 var _shield_down_left := 0.0
 var _fire_timer := 0.0
@@ -75,6 +76,12 @@ func on_shield_hit(ball: Ball, impact_speed: float, hit_pos: Vector2) -> void:
 	SignalBus.impact.emit(hit_pos, Combat.impact_intensity(impact_speed) * 0.4)
 	if reduced > 0:
 		health.apply_damage(reduced, hit_pos, false)
+
+
+func on_ball_hit(ball: Ball, impact_speed: float, hit_pos: Vector2, normal: Vector2) -> void:
+	super.on_ball_hit(ball, impact_speed, hit_pos, normal)
+	if not ball.is_captive:
+		body_hit.emit()
 
 
 func _on_death_extra() -> void:

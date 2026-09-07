@@ -55,6 +55,15 @@ var top_lanes: LaneGroup
 var spinners: Array[Spinner] = []
 var ramp: Ramp
 var turrets: Array[RuneTurret] = []
+var systems: TableSystems
+var chapters: ChapterSystem
+var exorcism: Exorcism
+var scoop: Scoop
+var censer: Censer
+var captives: Array[CaptiveBall] = []
+var right_bank: StandupBank
+var outlane_posts: Array[OutlanePost] = []
+var orbit_sensors: Array[Area2D] = []
 var turret_scene: PackedScene = preload("res://scenes/enemies/RuneTurret.tscn")
 var runes: Array[RuneTarget] = []
 var skeletons: Array[SkeletonSentry] = []
@@ -102,6 +111,46 @@ func _ready() -> void:
 	magic.name = "Magic"
 	magic.table = self
 	add_child(magic)
+	systems = TableSystems.new()
+	systems.name = "Systems"
+	add_child(systems)
+	systems.setup(self)
+	censer.spun.connect(systems.on_censer_spin)
+	for c in captives:
+		c.captive_hit.connect(systems.on_captive_hit)
+	for i in top_lanes.rollovers.size():
+		var idx := i
+		top_lanes.rollovers[i].rolled.connect(func(_r): systems.on_top_lane(idx))
+	for r in lane_group.rollovers:
+		if r.letter == "L":
+			r.rolled.connect(func(_r): systems.on_inlane(0))
+		elif r.letter == "O":
+			r.rolled.connect(func(_r): systems.on_inlane(1))
+	drop_bank.bank_completed.connect(func(): outlane_posts[0].set_lit(true))
+	right_bank.bank_completed.connect(func(_b): outlane_posts[1].set_lit(true))
+	plunger.launched.connect(func(_b, _s): systems.on_ball_launched())
+	chapters = ChapterSystem.new()
+	chapters.name = "Chapters"
+	add_child(chapters)
+	chapters.setup(self, systems)
+	ramp.completed.connect(chapters.on_ramp_completed)
+	right_bank.any_hit.connect(func(_b, _t): chapters.on_bank_right_hit())
+	for dt in drop_bank.targets:
+		dt.dropped.connect(func(_t): chapters.on_bank_left_hit())
+	for c in captives:
+		c.captive_hit.connect(func(_c, strong): if strong: chapters.on_captive_hit())
+	SignalBus.target_hit.connect(func(id, _p, _pos): if id.begins_with("bumper"): chapters.on_bumper_hit())
+	guardian.body_hit.connect(chapters.on_guardian_body_hit_full)
+	exorcism = Exorcism.new()
+	exorcism.name = "Exorcism"
+	add_child(exorcism)
+	exorcism.setup(self)
+	chapters.exorcism = exorcism
+	chapters.all_relics_collected.connect(func(): if not exorcism.is_active(): exorcism.light())
+	exorcism.finished.connect(func(won):
+		if not won:
+			chapters.reset_relics()
+	)
 	GameManager.state_changed.connect(_on_state_changed)
 	GameManager.game_started.connect(_on_game_started)
 
@@ -309,7 +358,7 @@ func _build_components() -> void:
 	# Banco de drop targets (direita, voltado para o flipper esquerdo).
 	drop_bank = DropTargetBank.new()
 	drop_bank.name = "DropBank"
-	drop_bank.position = Vector2(150, 472)
+	drop_bank.position = Vector2(175, 445)
 	drop_bank.rotation = deg_to_rad(-45.0)
 	for i in 3:
 		var dt: DropTarget = drop_target_scene.instantiate()
@@ -361,8 +410,66 @@ func _build_components() -> void:
 	ramp.path = PackedVector2Array([Vector2(240, 640), Vector2(240, 420), Vector2(275, 330), Vector2(345, 285), Vector2(410, 275),
 		Vector2(475, 285), Vector2(545, 330), Vector2(585, 400), Vector2(600, 500), Vector2(600, 650), Vector2(630, 700), Vector2(660, 730)])
 	components_layer.add_child(ramp)
+	# --- Lote A: Sacristia, Turíbulo, Sinos, banco direito, guardiões das outlanes, sensores de órbita ---
+	scoop = Scoop.new()
+	scoop.name = "Sacristy"
+	scoop.position = Vector2(300, 690)
+	# Cospe para baixo, na direção do flipper esquerdo (como um scoop real).
+	scoop.kick_direction = Vector2(-0.25, 1.0)
+	scoop.kick_strength = 420.0
+	scoop.scoop_entered.connect(_on_scoop_entered)
+	components_layer.add_child(scoop)
+	censer = Censer.new()
+	censer.name = "Censer"
+	censer.position = Vector2(380, 440)
+	components_layer.add_child(censer)
+	for d in [["captive_left", Vector2(110, 600)], ["captive_right", Vector2(600, 600)]]:
+		var c := CaptiveBall.new()
+		c.name = d[0]
+		c.captive_id = d[0]
+		c.position = d[1]
+		components_layer.add_child(c)
+		c.spawn_captive(ball_scene)
+		captives.append(c)
+	right_bank = StandupBank.new()
+	right_bank.name = "RightBank"
+	right_bank.position = Vector2(585, 452)
+	right_bank.rotation = deg_to_rad(45.0)
+	for i in 3:
+		var st := StandupTarget.new()
+		st.name = "Standup%d" % i
+		st.position = Vector2(-34.0 + 34.0 * i, 0)
+		st.target_id = "standup_%d" % i
+		right_bank.add_child(st)
+	components_layer.add_child(right_bank)
+	for d in [["post_left", Vector2(23, 748)], ["post_right", Vector2(737, 748)]]:
+		var post := OutlanePost.new()
+		post.name = d[0]
+		post.post_id = d[0]
+		post.position = d[1]
+		components_layer.add_child(post)
+		outlane_posts.append(post)
+	for d in [[0, Vector2(46, 380)], [1, Vector2(714, 380)]]:
+		var a := Area2D.new()
+		a.name = "OrbitSensor%d" % d[0]
+		a.collision_layer = 1 << 6
+		a.collision_mask = 1 << 1
+		a.position = d[1]
+		var cs := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(80.0, 16.0)
+		cs.shape = rect
+		a.add_child(cs)
+		var side: int = d[0]
+		a.body_entered.connect(func(body):
+			if body is Ball and not (body as Ball).is_captive and (body as Ball).linear_velocity.y < 0.0:
+				systems.on_orbit_made(side)
+				chapters.on_orbit(side)
+		)
+		components_layer.add_child(a)
+		orbit_sensors.append(a)
 	# Runas.
-	var rune_defs := [["rune_a", Vector2(78, 600)], ["rune_b", Vector2(682, 600)], ["rune_c", Vector2(190, 400)]]
+	var rune_defs := [["rune_a", Vector2(74, 585)], ["rune_b", Vector2(686, 585)], ["rune_c", Vector2(135, 380)]]
 	for d in rune_defs:
 		var rune := RuneTarget.new()
 		rune.name = d[0]
@@ -410,7 +517,7 @@ func _build_enemies() -> void:
 		idx += 1
 	var tr: RuneTurret = turret_scene.instantiate()
 	tr.name = "Turret0"
-	tr.position = Vector2(500, 600)
+	tr.position = Vector2(480, 640)
 	enemies_layer.add_child(tr)
 	turrets.append(tr)
 	guardian = guardian_scene.instantiate()
@@ -507,6 +614,8 @@ func serve_ball(grant_grace: bool = true) -> Ball:
 	if plunger.ball != null:
 		return plunger.ball  # já há bola no lançador: nunca duplicar
 	_grant_serve_grace = grant_grace
+	if grant_grace and systems != null:
+		systems.on_new_ball()
 	var ball: Ball = ball_scene.instantiate()
 	ball.id_label = _next_ball_id
 	_next_ball_id += 1
@@ -558,6 +667,12 @@ func _on_ball_drained(ball: Ball) -> void:
 	if multiball_active and active_balls.size() <= 1:
 		multiball_active = false
 		SignalBus.multiball_ended.emit()
+	if exorcism != null and exorcism.phase == 2:
+		AudioManager.play_sfx("drain", 0.05, -8.0)
+		exorcism.on_ball_drained_phase2()
+		if active_balls.is_empty():
+			call_deferred("serve_ball", false)
+		return
 	if active_balls.size() > 0:
 		AudioManager.play_sfx("drain", 0.05, -8.0)
 		return  # multiball: só perde vida quando todas drenarem
@@ -575,6 +690,7 @@ func _on_ball_drained(ball: Ball) -> void:
 	ball_save_source = ""
 	if GameManager.is_ball_in_play():
 		SignalBus.hud_message.emit(Loc.t("ball_lost"), 1.2)
+		systems.collect_end_bonus()
 	GameManager.on_all_balls_lost()
 
 
@@ -663,6 +779,19 @@ func _on_lanes_completed() -> void:
 	ball_save_left = maxf(ball_save_left, BALL_SAVE_SECONDS)
 	ball_save_source = "lanes"
 	SignalBus.ball_save_changed.emit(true, ball_save_left)
+
+
+func _on_scoop_entered(sc: Scoop, _ball: Ball) -> void:
+	if chapters.on_scoop(sc):
+		return  # bola presa para a escolha da Indulgência
+	var txt := systems.on_sacristy_letter_source()
+	if txt == "complete":
+		var award := systems.sacristy_award()
+		SignalBus.hud_message.emit("SACRISTIA: %s" % award, 2.2)
+		SignalBus.request_flash.emit(Color(0.78, 0.49, 1.0), 0.4)
+	elif txt != "":
+		SignalBus.hud_message.emit(Loc.t("sacristy_letter") % txt, 1.2)
+	ScoreManager.register_hit("scoop", 2000, sc.position)
 
 
 func _on_top_lanes_completed() -> void:
@@ -881,6 +1010,19 @@ func reset_table(full: bool = true) -> void:
 		t.force_reset()
 	guardian.force_reset()
 	top_lanes.reset_lanes()
+	right_bank.reset_bank()
+	for c in captives:
+		c.reset_captive()
+	for post in outlane_posts:
+		post.set_lit(false)
+	if systems != null and full:
+		systems.reset_game()
+	if chapters != null and full:
+		chapters.reset_game()
+	if exorcism != null:
+		exorcism.reset_game()
+	if scoop != null and scoop.is_holding():
+		scoop.release()
 	boss.reset_boss()
 	jackpot_portal.set_active(false)
 	lane_gate.set_closed(false)
