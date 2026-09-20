@@ -5,6 +5,41 @@ Uma catedral demoníaca em três zonas, hordas de criaturas, magia, multiball e 
 
 > Protótipo MVP jogável. Arte e áudio são provisórios, gerados proceduralmente para este projeto (originais).
 
+![Mesa do Relicário do Abismo](assets/art/background_table.png)
+
+---
+
+## 🏰 O mundo — a Catedral Profanada
+
+Uma catedral demoníaca partida em três zonas. A bola não é só a bola: ela é
+**projétil, arma e a sua vida** ao mesmo tempo. Quebre os **três Selos do Abismo**
+— derrube o banco de alvos, derrote o **Guardião do Vitral** e acenda as três runas
+— para despertar o chefe e abrir o portal de jackpot.
+
+| Runa A | Runa B | Runa C |
+|:---:|:---:|:---:|
+| ![Runa A](assets/art/rune_a.png) | ![Runa B](assets/art/rune_b.png) | ![Runa C](assets/art/rune_c.png) |
+
+As **7 Relíquias** são o coração da progressão — reúna as sete e desperte o
+**Exorcismo Final** no Guardião:
+
+![Relíquias](assets/art/props/relic_1.png) ![](assets/art/props/relic_2.png) ![](assets/art/props/relic_3.png) ![](assets/art/props/relic_4.png) ![](assets/art/props/relic_5.png) ![](assets/art/props/relic_6.png) ![](assets/art/props/relic_7.png)
+
+---
+
+## 👹 Bestiário & Chefes
+
+| | Ser | Papel |
+|---|---|---|
+| ![Bispo Sem-Rosto](assets/art/bishop.png) | **Bispo Sem-Rosto** | O chefe da Catedral Profanada. Três fases: pontos fracos alternados → invocação e projéteis → olho vulnerável |
+| ![Guardião do Vitral](assets/art/glass_guardian.png) | **Guardião do Vitral** | Selo vivo; derrotá-lo é um dos três Selos do Abismo |
+| ![Esqueleto-Sentinela](assets/art/skeleton_sentry.png) | **Esqueleto-Sentinela** | Horda comum da catedral |
+| ![Morcego de Cinzas](assets/art/ash_bat.png) | **Morcego de Cinzas** | Inimigo voador, variante por fase |
+| ![Portal](assets/art/portal_boss.png) | **Portal do Abismo** | Abre ao derrotar o chefe: sequência bônus de 30 s |
+
+**Três mesas, três chefes:** **Catedral Profanada** (Bispo Sem-Rosto) ·
+**Claustro dos Ecos** (Sineiro Enforcado) · **Olho do Abismo** (O Relicário).
+
 ## Jogar no navegador
 
 https://jrcn1991.github.io/relicario-do-abismo/ (build Web; em celular há controles de toque: metade esquerda/direita da tela = flippers, botões LANÇAR, MAGIA e PAUSA).
