@@ -7,7 +7,7 @@ Uma catedral demoníaca em três zonas, hordas de criaturas, magia, multiball e 
 
 ---
 
-## 🏰 O mundo — três zonas malditas
+## O mundo — três zonas malditas
 
 A bola não é só a bola: ela é **projétil, arma e a sua vida** ao mesmo tempo.
 Quebre os **três Selos do Abismo** — derrube o banco de alvos, derrote o **Guardião
@@ -21,7 +21,7 @@ portal de jackpot. Reúna as **7 Relíquias** e desperte o **Exorcismo Final**.
 
 ---
 
-## 👹 Chefes
+## Chefes
 
 | ![Bispo Sem-Rosto](assets/art/stages/stage1/boss.png) | ![Sineiro Enforcado](assets/art/stages/stage2/boss.png) | ![O Relicário](assets/art/stages/stage3/boss.png) |
 |:---:|:---:|:---:|
@@ -30,7 +30,7 @@ portal de jackpot. Reúna as **7 Relíquias** e desperte o **Exorcismo Final**.
 
 ---
 
-## 🦴 Bestiário
+## Bestiário
 
 | ![Guardião do Vitral](assets/art/stages/stage1/enemy_guardian.png) | ![Esqueleto-Sentinela](assets/art/stages/stage1/enemy_static.png) | ![Morcego de Cinzas](assets/art/stages/stage1/enemy_flyer.png) | ![Torre de Runas](assets/art/stages/stage1/enemy_turret.png) |
 |:---:|:---:|:---:|:---:|
