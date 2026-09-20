@@ -1,48 +1,48 @@
 # Relicário do Abismo
 
 Pinball de ação gótico em **Godot 4.7 (GDScript)**: a bola é projétil, arma e vida.
-Uma catedral demoníaca em três zonas, hordas de criaturas, magia, multiball e o chefe **Bispo Sem-Rosto**.
+Uma catedral demoníaca em três zonas, hordas de criaturas, magia, multiball e três chefes.
 
-> Protótipo MVP jogável. Arte e áudio são provisórios, gerados proceduralmente para este projeto (originais).
-
-![Mesa do Relicário do Abismo](assets/art/background_table.png)
+![Relicário do Abismo](assets/art/ui/menu_bg.png)
 
 ---
 
-## 🏰 O mundo — a Catedral Profanada
+## 🏰 O mundo — três zonas malditas
 
-Uma catedral demoníaca partida em três zonas. A bola não é só a bola: ela é
-**projétil, arma e a sua vida** ao mesmo tempo. Quebre os **três Selos do Abismo**
-— derrube o banco de alvos, derrote o **Guardião do Vitral** e acenda as três runas
-— para despertar o chefe e abrir o portal de jackpot.
+A bola não é só a bola: ela é **projétil, arma e a sua vida** ao mesmo tempo.
+Quebre os **três Selos do Abismo** — derrube o banco de alvos, derrote o **Guardião
+do Vitral** e acenda as três runas — para despertar o chefe de cada zona e abrir o
+portal de jackpot. Reúna as **7 Relíquias** e desperte o **Exorcismo Final**.
 
-| Runa A | Runa B | Runa C |
+| I · Catedral Profanada | II · Claustro dos Ecos | III · Olho do Abismo |
 |:---:|:---:|:---:|
-| ![Runa A](assets/art/rune_a.png) | ![Runa B](assets/art/rune_b.png) | ![Runa C](assets/art/rune_c.png) |
-
-As **7 Relíquias** são o coração da progressão — reúna as sete e desperte o
-**Exorcismo Final** no Guardião:
-
-![Relíquias](assets/art/props/relic_1.png) ![](assets/art/props/relic_2.png) ![](assets/art/props/relic_3.png) ![](assets/art/props/relic_4.png) ![](assets/art/props/relic_5.png) ![](assets/art/props/relic_6.png) ![](assets/art/props/relic_7.png)
+| ![Catedral Profanada](assets/art/stages/stage1/background.png) | ![Claustro dos Ecos](assets/art/stages/stage2/background.png) | ![Olho do Abismo](assets/art/stages/stage3/background.png) |
+| Vitrais e círculo arcano | Sinos e luar | O olho que tudo vê |
 
 ---
 
-## 👹 Bestiário & Chefes
+## 👹 Chefes
 
-| | Ser | Papel |
-|---|---|---|
-| ![Bispo Sem-Rosto](assets/art/bishop.png) | **Bispo Sem-Rosto** | O chefe da Catedral Profanada. Três fases: pontos fracos alternados → invocação e projéteis → olho vulnerável |
-| ![Guardião do Vitral](assets/art/glass_guardian.png) | **Guardião do Vitral** | Selo vivo; derrotá-lo é um dos três Selos do Abismo |
-| ![Esqueleto-Sentinela](assets/art/skeleton_sentry.png) | **Esqueleto-Sentinela** | Horda comum da catedral |
-| ![Morcego de Cinzas](assets/art/ash_bat.png) | **Morcego de Cinzas** | Inimigo voador, variante por fase |
-| ![Portal](assets/art/portal_boss.png) | **Portal do Abismo** | Abre ao derrotar o chefe: sequência bônus de 30 s |
+| ![Bispo Sem-Rosto](assets/art/stages/stage1/boss.png) | ![Sineiro Enforcado](assets/art/stages/stage2/boss.png) | ![O Relicário](assets/art/stages/stage3/boss.png) |
+|:---:|:---:|:---:|
+| **Bispo Sem-Rosto** | **Sineiro Enforcado** | **O Relicário** |
+| Catedral Profanada — três fases: pontos fracos alternados → invocação e projéteis → olho vulnerável | Claustro dos Ecos — o carrilhão amaldiçoado de chamas azuis | Olho do Abismo — a relíquia viva, chefe final |
 
-**Três mesas, três chefes:** **Catedral Profanada** (Bispo Sem-Rosto) ·
-**Claustro dos Ecos** (Sineiro Enforcado) · **Olho do Abismo** (O Relicário).
+---
+
+## 🦴 Bestiário
+
+| ![Guardião do Vitral](assets/art/stages/stage1/enemy_guardian.png) | ![Esqueleto-Sentinela](assets/art/stages/stage1/enemy_static.png) | ![Morcego de Cinzas](assets/art/stages/stage1/enemy_flyer.png) | ![Torre de Runas](assets/art/stages/stage1/enemy_turret.png) |
+|:---:|:---:|:---:|:---:|
+| **Guardião do Vitral** | **Esqueleto-Sentinela** | **Morcego de Cinzas** | **Torre de Runas** |
+| Selo vivo; derrotá-lo é um dos três Selos | Horda comum da catedral | Voador; variante por zona | Fixa; dispara runas à distância |
+
+Cada zona tem a sua variante própria de cada criatura, com animações de idle,
+ataque, dano e morte.
 
 ## Jogar no navegador
 
-https://jrcn1991.github.io/relicario-do-abismo/ (build Web; em celular há controles de toque: metade esquerda/direita da tela = flippers, botões LANÇAR, MAGIA e PAUSA).
+https://jrcn1991.github.io/monster_pinball_relicario-do-abismo/ (build Web; em celular há controles de toque: metade esquerda/direita da tela = flippers, botões LANÇAR, MAGIA e PAUSA).
 
 ## Como jogar (Linux, esta máquina)
 
