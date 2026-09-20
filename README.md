@@ -42,7 +42,7 @@ ataque, dano e morte.
 
 ## Jogar no navegador
 
-https://jrcn1991.github.io/monster_pinball_relicario-do-abismo/ (build Web; em celular há controles de toque: metade esquerda/direita da tela = flippers, botões LANÇAR, MAGIA e PAUSA).
+https://jrcn1991.github.io/game_monster_pinball_relicario-do-abismo/ (build Web; em celular há controles de toque: metade esquerda/direita da tela = flippers, botões LANÇAR, MAGIA e PAUSA).
 
 ## Como jogar (Linux, esta máquina)
 
