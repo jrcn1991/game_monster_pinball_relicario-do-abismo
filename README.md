@@ -1,7 +1,7 @@
 # Relicário do Abismo
 
 Pinball de ação gótico em **Godot 4.7 (GDScript)**: a bola é projétil, arma e vida.
-Uma catedral demoníaca em três zonas, hordas de criaturas, magia, multiball e três chefes.
+Uma catedral em três zonas, hordas de criaturas, magia, multiball e três chefes.
 
 ![Relicário do Abismo](assets/art/ui/menu_bg.png)
 
