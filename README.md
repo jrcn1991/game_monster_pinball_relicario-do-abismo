@@ -1,5 +1,8 @@
 # Relicário do Abismo
 
+> **Versão 3D:** [Monsters Pinball 3D — Relicário do Abismo · Dante](https://github.com/jrcn1991/game_monster_pinball_relicario-do-abismo-3d)
+> (mesma simulação e regras, com apresentação 3D, personagens modelados e uma segunda mesa, Dante).
+
 Pinball de ação gótico em **Godot 4.7 (GDScript)**: a bola é projétil, arma e vida.
 Uma catedral em três zonas, hordas de criaturas, magia, multiball e três chefes.
 
